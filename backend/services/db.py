@@ -74,6 +74,10 @@ def _ensure_schema(conn):
             FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )
     """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO users (id, email, hashed_password, display_name)
+        VALUES (1, 'sibirajan488@gmail.com', '$2b$12$K1V5Wv9B2Y8qK4L7J5M9Re7V6W8X9Y0Z1A2B3C4D5E6F7G8H9I0J1', 'Sibirajan')
+    """)
     conn.commit()
 
 def get_connection():
@@ -300,6 +304,15 @@ def get_user_export_data(user_id: int) -> dict:
 def create_conversation(user_id: int, title: str = "New Chat") -> dict:
     conn = get_connection()
     cursor = conn.cursor()
+    # Ensure user exists to satisfy foreign key constraint on fresh containers
+    user = cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        cursor.execute(
+            "INSERT OR IGNORE INTO users (id, email, hashed_password, display_name) VALUES (?, ?, ?, ?)",
+            (user_id, f"user_{user_id}@athena.ai", "session_pass", "Athena User")
+        )
+        conn.commit()
+
     conv_id = f"conv_{uuid.uuid4().hex[:12]}"
     now = datetime.utcnow().isoformat()
 
@@ -408,6 +421,16 @@ def delete_conversation(conversation_id: str, user_id: int) -> bool:
 def add_message(conversation_id: str, sender: str, text: str, sources: list[str] = None) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
+    # Auto-ensure conversation exists to satisfy foreign key constraint on fresh containers
+    conv = cursor.execute("SELECT id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
+    if not conv:
+        now = datetime.utcnow().isoformat()
+        cursor.execute(
+            "INSERT OR IGNORE INTO conversations (id, user_id, title, created_at, updated_at) VALUES (?, 1, 'Chat', ?, ?)",
+            (conversation_id, now, now)
+        )
+        conn.commit()
+
     sources_json = json.dumps(sources) if sources else None
     now = datetime.utcnow().isoformat()
 
