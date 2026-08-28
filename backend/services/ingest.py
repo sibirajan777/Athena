@@ -246,13 +246,25 @@ def ingest_folder(folder_path: str = "data"):
 def get_collection_stats() -> dict:
     try:
         count = collection.count()
-        files = []
+        files = set()
         if DATA_DIR.exists():
-            files = [f.name for f in DATA_DIR.iterdir() if f.is_file()]
+            for f in DATA_DIR.iterdir():
+                if f.is_file():
+                    files.add(f.name)
+        try:
+            all_meta = collection.get(include=["metadatas"])
+            if all_meta and "metadatas" in all_meta and all_meta["metadatas"]:
+                for m in all_meta["metadatas"]:
+                    if m and "source" in m:
+                        files.add(m["source"])
+        except Exception:
+            pass
+
+        doc_list = sorted(list(files))
         return {
             "total_chunks": count,
-            "document_count": len(files),
-            "documents": files
+            "document_count": len(doc_list),
+            "documents": doc_list
         }
     except Exception as e:
         print(f"Error fetching stats: {e}")
@@ -306,6 +318,21 @@ def get_detailed_documents_list() -> dict:
                         "indexed": chunks > 0
                     })
 
+        # Ensure all Chroma Cloud indexed sources appear even if container disk is fresh
+        seen = {d["filename"] for d in docs_list}
+        for src, chunks in sorted(source_counts.items(), key=lambda x: x[0]):
+            if src not in seen:
+                suffix = Path(src).suffix.upper().replace(".", "") or "FILE"
+                docs_list.append({
+                    "filename": src,
+                    "size": "Cloud Synced",
+                    "size_bytes": 0,
+                    "type": suffix,
+                    "modified_at": "Indexed in Cloud",
+                    "chunks": chunks,
+                    "indexed": True
+                })
+
         return {
             "total_chunks": total_chunks,
             "document_count": len(docs_list),
@@ -318,6 +345,8 @@ def get_detailed_documents_list() -> dict:
             "document_count": 0,
             "documents": []
         }
+
+get_indexed_documents = get_detailed_documents_list
 
 def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
     """Returns sample indexed chunks and text snippets for a given document."""
