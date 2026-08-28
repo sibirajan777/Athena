@@ -141,16 +141,18 @@ def chunk_plain_text(text: str, source: str, chunk_size: int = 800, overlap: int
     return chunks
 
 def chunk_markdown(text: str, source: str) -> list[dict]:
-    sections = re.split(r"(?=^## )", text, flags=re.MULTILINE)
+    # Split by markdown headers (#, ##, ###)
+    sections = re.split(r"(?=^#{1,3}\s)", text, flags=re.MULTILINE)
     chunks = []
 
     for section in sections:
-        section = section.strip()
-        if not section or (section.startswith("# ") and "##" not in section):
-            continue
-        if len(section) < 20:
-            continue
-        chunks.append({"text": section, "source": source})
+        clean = section.strip()
+        if len(clean) >= 20:
+            chunks.append({"text": clean, "source": source})
+
+    # If header splitting resulted in no chunks or only 1 small chunk, fallback to plain text chunking
+    if not chunks:
+        chunks = chunk_plain_text(text, source)
 
     return chunks
 
@@ -243,22 +245,45 @@ def ingest_folder(folder_path: str = "data"):
 
     print(f"\nDone. Total chunks in collection: {collection.count()}")
 
+def _get_all_source_counts() -> dict[str, int]:
+    """Retrieves exact chunk counts per document from Chroma Cloud using paginated batches."""
+    source_counts = {}
+    try:
+        total = collection.count()
+        if total == 0:
+            return source_counts
+
+        offset = 0
+        batch_size = 250
+        while offset < total:
+            batch = collection.get(
+                limit=batch_size,
+                offset=offset,
+                include=["metadatas"]
+            )
+            if not batch or "metadatas" not in batch or not batch["metadatas"]:
+                break
+            for m in batch["metadatas"]:
+                if m and "source" in m:
+                    src = m["source"]
+                    source_counts[src] = source_counts.get(src, 0) + 1
+            offset += len(batch["metadatas"])
+            if len(batch["metadatas"]) < batch_size:
+                break
+    except Exception as e:
+        print(f"Error fetching source counts from Chroma: {e}")
+    return source_counts
+
 def get_collection_stats() -> dict:
     try:
         count = collection.count()
-        files = set()
+        source_counts = _get_all_source_counts()
+        files = set(source_counts.keys())
+        
         if DATA_DIR.exists():
             for f in DATA_DIR.iterdir():
                 if f.is_file():
                     files.add(f.name)
-        try:
-            all_meta = collection.get(include=["metadatas"])
-            if all_meta and "metadatas" in all_meta and all_meta["metadatas"]:
-                for m in all_meta["metadatas"]:
-                    if m and "source" in m:
-                        files.add(m["source"])
-        except Exception:
-            pass
 
         doc_list = sorted(list(files))
         return {
@@ -278,18 +303,7 @@ def get_detailed_documents_list() -> dict:
     """Returns rich metadata for all documents in the Athena Knowledge Base."""
     try:
         total_chunks = collection.count()
-        
-        # Calculate chunks per document source from ChromaDB
-        source_counts = {}
-        try:
-            all_meta = collection.get(include=["metadatas"])
-            if all_meta and "metadatas" in all_meta and all_meta["metadatas"]:
-                for m in all_meta["metadatas"]:
-                    if m and "source" in m:
-                        src = m["source"]
-                        source_counts[src] = source_counts.get(src, 0) + 1
-        except Exception as e:
-            print(f"Error getting metadatas: {e}")
+        source_counts = _get_all_source_counts()
 
         docs_list = []
         if DATA_DIR.exists():
