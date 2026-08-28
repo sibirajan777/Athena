@@ -142,7 +142,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Setup Event Listeners
     setupEventListeners();
 
-    // 3. Load Initial Data
+    // 3. Load Initial Data (Immediate cache render + background refresh)
+    const cachedUser = localStorage.getItem("athena_user");
+    if (cachedUser) {
+        try {
+            const u = JSON.parse(cachedUser);
+            renderUserProfileUI({
+                id: u.id || 1,
+                email: u.email || "user@athena.ai",
+                display_name: u.display_name || (u.email ? u.email.split("@")[0].charAt(0).toUpperCase() + u.email.split("@")[0].slice(1) : "User"),
+                avatar_color: u.avatar_color || "#10a37f",
+                created_at: "August 2026",
+                stats: { total_conversations: 0, total_messages: 0, total_chunks: 0, total_documents: 0 }
+            });
+        } catch (e) {}
+    }
     loadUserProfile();
     loadKnowledgeStats();
     loadConversations();
@@ -450,6 +464,7 @@ async function loadUserProfile() {
 
         if (res.ok) {
             const data = await res.json();
+            localStorage.setItem("athena_user", JSON.stringify(data));
             renderUserProfileUI(data);
         }
     } catch (err) {
@@ -458,47 +473,62 @@ async function loadUserProfile() {
 }
 
 function renderUserProfileUI(profile) {
-    const initial = (profile.display_name || profile.email || "U").charAt(0).toUpperCase();
+    if (!profile) return;
+    const name = profile.display_name || (profile.email ? profile.email.split("@")[0].charAt(0).toUpperCase() + profile.email.split("@")[0].slice(1) : "User");
+    const email = profile.email || "user@athena.ai";
+    const initial = name.charAt(0).toUpperCase();
+    const color = profile.avatar_color || "#10a37f";
     
     // Sidebar Footer
-    if (elements.userAvatar) {
-        elements.userAvatar.textContent = initial;
-        if (profile.avatar_color) elements.userAvatar.style.background = profile.avatar_color;
+    const avatarEl = elements.userAvatar || document.getElementById("user-avatar");
+    const nameEl = elements.userDisplayName || document.getElementById("user-display-name");
+    const emailEl = elements.userEmail || document.getElementById("user-email");
+
+    if (avatarEl) {
+        avatarEl.textContent = initial;
+        avatarEl.style.background = color;
     }
-    if (elements.userDisplayName) elements.userDisplayName.textContent = profile.display_name;
-    if (elements.userEmail) elements.userEmail.textContent = profile.email;
+    if (nameEl) nameEl.textContent = name;
+    if (emailEl) emailEl.textContent = email;
 
     // Top Bar Trigger Avatar
-    if (elements.topAvatar) {
-        elements.topAvatar.textContent = initial;
-        if (profile.avatar_color) elements.topAvatar.style.background = profile.avatar_color;
+    const topAvatarEl = elements.topAvatar || document.getElementById("top-avatar");
+    if (topAvatarEl) {
+        topAvatarEl.textContent = initial;
+        topAvatarEl.style.background = color;
     }
 
     // Modal Hero Card
-    if (elements.profileHeroAvatar) {
-        elements.profileHeroAvatar.textContent = initial;
-        if (profile.avatar_color) elements.profileHeroAvatar.style.background = profile.avatar_color;
+    const heroAvatar = elements.profileHeroAvatar || document.getElementById("profile-hero-avatar");
+    const heroName = elements.profileHeroName || document.getElementById("profile-hero-name");
+    const heroEmail = elements.profileHeroEmail || document.getElementById("profile-hero-email");
+    const memberSince = elements.profileMemberSince || document.getElementById("profile-member-since");
+    const userIdEl = elements.profileUserId || document.getElementById("profile-user-id");
+
+    if (heroAvatar) {
+        heroAvatar.textContent = initial;
+        heroAvatar.style.background = color;
     }
-    if (elements.profileHeroName) elements.profileHeroName.textContent = profile.display_name;
-    if (elements.profileHeroEmail) elements.profileHeroEmail.textContent = profile.email;
-    if (elements.profileMemberSince && profile.created_at) {
-        elements.profileMemberSince.textContent = `Member since ${profile.created_at}`;
+    if (heroName) heroName.textContent = name;
+    if (heroEmail) heroEmail.textContent = email;
+    if (memberSince && profile.created_at) {
+        memberSince.textContent = `Member since ${profile.created_at}`;
     }
-    if (elements.profileUserId) elements.profileUserId.textContent = `#${profile.id}`;
+    if (userIdEl && profile.id) userIdEl.textContent = `#${profile.id}`;
 
     // Modal Overview Stats
     if (profile.stats) {
         if (elements.statConvs) elements.statConvs.textContent = profile.stats.total_conversations;
         if (elements.statMessages) elements.statMessages.textContent = profile.stats.total_messages;
-        if (elements.statChunks) elements.statChunks.textContent = Number(profile.stats.total_chunks).toLocaleString();
-        if (elements.statDocs) elements.statDocs.textContent = profile.stats.total_documents;
+        if (elements.statChunks) elements.statChunks.textContent = Number(profile.stats.total_chunks || 0).toLocaleString();
+        if (elements.statDocs) elements.statDocs.textContent = profile.stats.total_documents || 0;
     }
 
     // Edit Form Pre-fill
-    if (elements.editDisplayName) elements.editDisplayName.value = profile.display_name;
+    if (elements.editDisplayName) elements.editDisplayName.value = name;
     if (elements.avatarColorDots) {
         elements.avatarColorDots.forEach(dot => {
-            if (dot.getAttribute("data-color") === profile.avatar_color) {
+            if (dot.getAttribute("data-color") === color) {
                 dot.classList.add("active");
             } else {
                 dot.classList.remove("active");
