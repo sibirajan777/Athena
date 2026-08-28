@@ -7,26 +7,13 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv/
-venv/
-env/
-
-# Environment variables & secrets
+.venv
+# Environment variables
 .env
-.env.local
-*.env
-!.env.example
 
-# Database / vector store (local state)
+# Database / vector store
 *.db
-*.sqlite3
 chroma_db/
 
-# Documents & uploads
+# Personal documents (contain contact info)
 data/*.pdf
-
-# IDE & system
-.DS_Store
-.idea/
-.vscode/
-*.log
