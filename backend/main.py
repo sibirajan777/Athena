@@ -276,16 +276,21 @@ def knowledge_stats(user_id: int = Depends(get_current_user_id)):
 
 @app.get("/knowledge/documents")
 def knowledge_documents(user_id: int = Depends(get_current_user_id)):
-    return get_indexed_documents()
+    return get_detailed_documents_list()
+
+@app.get("/knowledge/documents/{filename}/preview")
+def preview_knowledge_doc(filename: str, user_id: int = Depends(get_current_user_id)):
+    return get_document_preview(filename)
 
 @app.delete("/knowledge/documents/{filename}")
 async def delete_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
     try:
-        deleted_chunks = await run_in_threadpool(delete_document, filename)
-        return {"status": "success", "filename": filename, "deleted_chunks": deleted_chunks}
+        deleted = await run_in_threadpool(delete_document, filename)
+        return {"status": "success", "filename": filename, "deleted": deleted}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/knowledge/documents/{filename}/reindex")
 @app.post("/knowledge/reindex/{filename}")
 async def reindex_single_document(filename: str, user_id: int = Depends(get_current_user_id)):
     """Re-chunks and re-embeds an existing document."""

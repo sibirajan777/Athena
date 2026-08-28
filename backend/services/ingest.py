@@ -255,9 +255,12 @@ def get_detailed_documents_list() -> dict:
             print(f"Error getting metadatas: {e}")
 
         docs_list = []
+        found_names = set()
+
         if DATA_DIR.exists():
             for f in sorted(DATA_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
                 if f.is_file():
+                    found_names.add(f.name)
                     stat = f.stat()
                     size_bytes = stat.st_size
                     if size_bytes < 1024:
@@ -281,6 +284,20 @@ def get_detailed_documents_list() -> dict:
                         "indexed": chunks > 0
                     })
 
+        # Add any sources indexed in ChromaDB that may not be on local container disk
+        for src, chunks in source_counts.items():
+            if src not in found_names:
+                ext = Path(src).suffix.upper().replace(".", "") or "PDF"
+                docs_list.append({
+                    "filename": src,
+                    "size": "Indexed",
+                    "size_bytes": 0,
+                    "type": ext,
+                    "modified_at": "Indexed in Athena",
+                    "chunks": chunks,
+                    "indexed": True
+                })
+
         return {
             "total_chunks": total_chunks,
             "document_count": len(docs_list),
@@ -297,10 +314,6 @@ def get_detailed_documents_list() -> dict:
 def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
     """Returns sample indexed chunks and text snippets for a given document."""
     try:
-        file_path = DATA_DIR / filename
-        if not file_path.exists():
-            return {"error": "Document not found on disk"}
-
         # Query ChromaDB for chunks belonging to this document
         results = collection.get(
             where={"source": filename},
@@ -316,10 +329,11 @@ def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
                     "text": doc_text[:400] + ("..." if len(doc_text) > 400 else "")
                 })
 
-        stat = file_path.stat()
+        file_path = DATA_DIR / filename
+        size_bytes = file_path.stat().st_size if file_path.exists() else 0
         return {
             "filename": filename,
-            "size_bytes": stat.st_size,
+            "size_bytes": size_bytes,
             "total_chunks_found": len(results.get("documents", [])),
             "chunks_preview": chunks_preview
         }
