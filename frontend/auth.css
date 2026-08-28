@@ -1,0 +1,561 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Claude AI Signature Black & White / Warm Paper Theme */
+    --bg-page: #faf9f5;
+    --card-bg: #ffffff;
+    --text-main: #141413;
+    --text-muted: #605f5b;
+    --text-light: #87867f;
+    
+    --border-color: #e5e2d9;
+    --border-hover: #d1cdc0;
+    --border-focus: #141413;
+    
+    --primary: #141413;
+    --primary-hover: #2b2b28;
+    --primary-glow: rgba(20, 20, 19, 0.12);
+    --primary-gradient: #141413;
+    --accent-claude: #cc785c;
+    
+    --card-shadow: 0 10px 30px -10px rgba(20, 20, 19, 0.06), 0 0 0 1px #e5e2d9;
+    --input-bg: #ffffff;
+    
+    --error-bg: #fef2f2;
+    --error-border: #fecaca;
+    --error-text: #b91c1c;
+    
+    --success-bg: #f0fdf4;
+    --success-border: #bbf7d0;
+    --success-text: #15803d;
+}
+
+[data-theme="dark"] {
+    --bg-page: #1f1e1b;
+    --card-bg: #272622;
+    --text-main: #ecebe4;
+    --text-muted: #9c9a91;
+    --text-light: #706f67;
+    
+    --border-color: #353430;
+    --border-hover: #484741;
+    --border-focus: #ecebe4;
+    
+    --primary: #ecebe4;
+    --primary-hover: #ffffff;
+    --primary-glow: rgba(236, 235, 228, 0.15);
+    --primary-gradient: #ecebe4;
+    --accent-claude: #d97757;
+    
+    --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.4), 0 0 0 1px #353430;
+    --input-bg: #1f1e1b;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg-page);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    color: var(--text-main);
+    position: relative;
+    overflow-x: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.auth-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 40px 36px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+/* Attractive Circular Athena Logo Badge */
+.logo-badge {
+    width: 72px;
+    height: 72px;
+    background: #f0eee6;
+    border: 1.5px solid var(--border-color);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    padding: 12px;
+    box-shadow: 0 4px 14px rgba(20, 20, 19, 0.06);
+    animation: floatBadge 5s ease-in-out infinite;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+@keyframes floatBadge {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+[data-theme="dark"] .logo-badge {
+    background: #272622;
+}
+
+.logo-badge:hover {
+    transform: scale(1.08) rotate(3deg);
+    box-shadow: 0 8px 24px rgba(204, 120, 92, 0.2);
+}
+
+.logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.auth-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.auth-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Global Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* Hide native browser password reveal controls */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none !important;
+}
+
+/* Alert Notification */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 20px;
+}
+
+.alert.error {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--error-text);
+}
+
+.alert.success {
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success-text);
+}
+
+.alert svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+/* Form Styles */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.input-container input {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-container input::placeholder {
+    color: var(--text-light);
+}
+
+.input-container input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Password Toggle Button */
+.input-container.with-toggle input {
+    padding-right: 44px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 0.15s ease;
+    z-index: 2;
+}
+
+.toggle-password:hover {
+    color: var(--text-main);
+}
+
+.toggle-password svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+}
+
+.toggle-password svg.hidden {
+    display: none !important;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+/* Primary Button (Claude Solid Black & White Style) */
+.btn-primary {
+    width: 100%;
+    padding: 12px 18px;
+    background: #141413;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #141413;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+    margin-top: 6px;
+}
+
+[data-theme="dark"] .btn-primary {
+    background: #ecebe4;
+    color: #141413;
+    border-color: #ecebe4;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2b2b28;
+    border-color: #2b2b28;
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: #ffffff;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+[data-theme="dark"] .spinner {
+    border-color: rgba(20, 20, 19, 0.3);
+    border-top-color: #141413;
+}
+
+.spinner.hidden {
+    display: none;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Footer / Switch Auth Link */
+.auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.auth-link {
+    color: var(--text-main);
+    text-decoration: underline;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.auth-link:hover {
+    color: var(--accent-claude);
+}
+
+/* Responsive adjustment */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 28px 20px;
+    }
+}
+
+/* ==========================================================================
+   Auth Page Particle Canvas + Ambient Atmospheric Glows
+   ========================================================================== */
+.auth-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.9;
+}
+
+.auth-ambient-top {
+    position: fixed;
+    top: -140px;
+    right: 8%;
+    width: 460px;
+    height: 460px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(204, 120, 92, 0.13) 0%, rgba(204, 120, 92, 0) 70%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: authAmbientDrift 16s ease-in-out infinite alternate;
+}
+
+.auth-ambient-bottom {
+    position: fixed;
+    bottom: -120px;
+    left: 6%;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100, 80, 200, 0.07) 0%, rgba(100, 80, 200, 0) 70%);
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: 0;
+    animation: authAmbientDrift 20s ease-in-out infinite alternate-reverse;
+}
+
+[data-theme="dark"] .auth-ambient-top {
+    background: radial-gradient(circle, rgba(217, 119, 87, 0.18) 0%, rgba(217, 119, 87, 0) 70%);
+}
+
+[data-theme="dark"] .auth-ambient-bottom {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0) 70%);
+}
+
+@keyframes authAmbientDrift {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(25px, -20px) scale(1.08); }
+    100% { transform: translate(-20px, 15px) scale(0.94); }
+}
+
+/* ==========================================================================
+   Auth Wrapper & Card Entrance
+   ========================================================================== */
+.auth-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    animation: authCardEntrance 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes authCardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Page-exit animation (triggered by JS) */
+.auth-wrapper.exit-up {
+    animation: authCardExit 0.38s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes authCardExit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-22px) scale(0.96);
+    }
+}
+
+/* ==========================================================================
+   Staggered Field Entrance (items reveal one-by-one)
+   ========================================================================== */
+.stagger-item {
+    opacity: 0;
+    transform: translateY(16px);
+}
+
+.stagger-item.stagger-ready {
+    animation: staggerReveal 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes staggerReveal {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Logo Badge Wrapper — orbital ring around the logo
+   ========================================================================== */
+.logo-badge-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    animation: floatBadge 5s ease-in-out infinite;
+}
+
+.logo-orbit-ring {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.ring-sm {
+    width: 96px;
+    height: 96px;
+    border: 1px solid rgba(204, 120, 92, 0.35);
+    border-top-color: rgba(204, 120, 92, 0.8);
+    border-bottom-color: rgba(204, 120, 92, 0.8);
+    animation: authOrbitSpin 9s linear infinite;
+    box-shadow: 0 0 12px rgba(204, 120, 92, 0.12);
+}
+
+[data-theme="dark"] .ring-sm {
+    border-color: rgba(217, 119, 87, 0.35);
+    border-top-color: rgba(217, 119, 87, 0.85);
+    border-bottom-color: rgba(217, 119, 87, 0.85);
+    box-shadow: 0 0 16px rgba(217, 119, 87, 0.18);
+}
+
+@keyframes authOrbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Remove the old standalone logo-badge margin since wrapper handles it */
+.logo-badge-wrapper .logo-badge {
+    margin-bottom: 0;
+    position: relative;
+    z-index: 2;
+}
+
+/* Input focus glow pulse */
+.input-container input:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+    animation: inputFocusPulse 0.3s ease;
+}
+
+@keyframes inputFocusPulse {
+    0%   { box-shadow: 0 0 0 0px var(--primary-glow); }
+    60%  { box-shadow: 0 0 0 5px var(--primary-glow); }
+    100% { box-shadow: 0 0 0 3px var(--primary-glow); }
+}
+
+/* Button press micro-interaction */
+.btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+

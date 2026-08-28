@@ -1,0 +1,34 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables (keep .env.example, not .env)
+.env
+
+# Database / vector store
+*.db
+chroma_db/
+
+# Personal / uploaded documents
+data/*.pdf
+data/*.md
+data/*.txt
+
+# Evaluation output (regeneratable — keeps repo clean)
+eval_results.json
+eval_report.md
+eval_comparison.png
+
+# OS / IDE artefacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

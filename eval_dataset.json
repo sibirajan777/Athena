@@ -1,0 +1,202 @@
+[
+  {
+    "id": "Q01",
+    "category": "RAG Architecture",
+    "question": "What are the three developmental paradigms of RAG outlined in the survey paper?",
+    "reference_answer": "The three developmental paradigms of RAG are Naive RAG, Advanced RAG, and Modular RAG. Naive RAG follows a traditional 'Retrieve-Read' pipeline. Advanced RAG introduces pre-retrieval and post-retrieval optimization strategies to overcome Naive RAG's limitations. Modular RAG enables flexible multi-module structures, routing, and adaptive pipeline designs beyond fixed sequential flows.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["Naive RAG", "Advanced RAG", "Modular RAG", "Retrieve-Read"]
+  },
+  {
+    "id": "Q02",
+    "category": "RAG Architecture",
+    "question": "What are the key limitations and bottlenecks associated with Naive RAG?",
+    "reference_answer": "Naive RAG suffers from several key bottlenecks: (1) Low precision in retrieval leading to misaligned or noisy context, (2) Low recall where critical chunks are missed, (3) Redundancy and outdated information, (4) Hallucination and generation degradation when LLMs are presented with conflicting context, and (5) 'Lost in the Middle' phenomena where LLMs overlook information buried in long contexts.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["low precision", "low recall", "hallucination", "lost in the middle", "noise"]
+  },
+  {
+    "id": "Q03",
+    "category": "RAG Architecture",
+    "question": "What techniques are used in the Pre-Retrieval stage of Advanced RAG to improve retrieval quality?",
+    "reference_answer": "Pre-retrieval techniques focus on enhancing index structure and queries before search occurs. These include: (1) Query rewriting and transformation, (2) Hypothetical Document Embeddings (HyDE) where the LLM generates a hypothetical answer to bridge the semantic gap, (3) Multi-query expansion, (4) Query routing, and (5) Optimizing chunk granularity and hierarchical index structures with document summaries.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["query rewriting", "HyDE", "query expansion", "routing", "chunk granularity", "hierarchical indexing"]
+  },
+  {
+    "id": "Q04",
+    "category": "RAG Architecture",
+    "question": "What post-retrieval optimization methods are employed in RAG pipelines?",
+    "reference_answer": "Post-retrieval methods process retrieved chunks before passing them to the generator. Key techniques include: (1) Re-ranking retrieved documents using cross-encoders or specialized reranking models to prioritize the most relevant chunks, and (2) Context compression and selection (such as selective context or prompt compression) to eliminate redundant noise and mitigate context window overflow.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["re-ranking", "reranker", "context compression", "prompt compression", "filtering"]
+  },
+  {
+    "id": "Q05",
+    "category": "RAG Architecture",
+    "question": "What is Self-RAG and how does it improve retrieval-augmented generation?",
+    "reference_answer": "Self-RAG (Self-Reflective Retrieval-Augmented Generation) is an adaptive RAG framework where the model dynamically decides when to retrieve and self-evaluates its own generated output using reflection tokens. It introduces special tokens (e.g., Retrieve, IsRel, IsSup, IsUse) to determine if retrieval is needed, judge whether retrieved passages are relevant, check if generated claims are supported, and evaluate answer usefulness.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["Self-RAG", "reflection tokens", "dynamic retrieval", "critique", "self-evaluation"]
+  },
+  {
+    "id": "Q06",
+    "category": "RAG Architecture",
+    "question": "How does HyDE (Hypothetical Document Embeddings) work in RAG systems?",
+    "reference_answer": "HyDE uses an instruction-tuned LLM to generate a hypothetical document or answer in response to a user query without accessing external context. Even if the generated document contains factual inaccuracies, its vector embedding is closer in semantic space to the desired ground-truth documents than the original brief query, allowing vector search to retrieve more relevant passages.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["HyDE", "hypothetical document", "semantic gap", "vector embedding"]
+  },
+  {
+    "id": "Q07",
+    "category": "RAG Architecture",
+    "question": "What are the primary benchmark frameworks used for evaluating RAG systems?",
+    "reference_answer": "Common RAG evaluation frameworks and benchmarks include: (1) Ragas, which evaluates context precision, context recall, faithfulness, and answer relevancy, (2) ARES (Automated RAG Evaluation System) using synthetic data and fine-tuned LLM judges, (3) TruLens (RAG Triad: context relevance, groundedness, answer relevance), and (4) RGB (RAG Benchmark) assessing noise robustness, negative rejection, and counterfactual robustness.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["Ragas", "ARES", "TruLens", "faithfulness", "answer relevancy", "context recall"]
+  },
+  {
+    "id": "Q08",
+    "category": "RAG Architecture",
+    "question": "How does RAG compare with Fine-Tuning in terms of updating knowledge and mitigating hallucinations?",
+    "reference_answer": "RAG provides real-time access to dynamic, up-to-date external knowledge bases without re-training costs, offers verifiable source provenance and citations, and significantly reduces hallucinations. Fine-tuning excels at adapting model behavior, tone, domain vocabulary, and following specific task formats, but struggles with knowledge cutoffs and expensive retraining for fast-changing data. Combining RAG with fine-tuning offers the best performance.",
+    "expected_sources": ["2312.10997v5.pdf"],
+    "key_concepts": ["RAG vs fine-tuning", "real-time knowledge", "hallucination", "provenance", "adaptation"]
+  },
+  {
+    "id": "Q09",
+    "category": "ML Fundamentals",
+    "question": "What is the difference between supervised and unsupervised machine learning?",
+    "reference_answer": "Supervised learning algorithms are trained on labeled data with known input-output pairs (features and target labels) to learn a mapping function for classification or regression. Unsupervised learning algorithms receive unlabeled data and discover inherent structures, patterns, clusters, or lower-dimensional representations without target guidance (e.g., clustering with k-Means, dimensionality reduction with PCA).",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["supervised learning", "unsupervised learning", "labeled data", "unlabeled data", "clustering", "classification"]
+  },
+  {
+    "id": "Q10",
+    "category": "ML Fundamentals",
+    "question": "How does the k-Nearest Neighbors (k-NN) algorithm classify a new data point?",
+    "reference_answer": "k-NN is an instance-based lazy learning algorithm. To classify a new sample, it measures the distance (typically Euclidean distance) between the sample and all training points in feature space, identifies the k nearest neighbors, and assigns the sample to the class most common among those k neighbors via majority voting (or average for regression).",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["k-Nearest Neighbors", "k-NN", "distance metric", "majority vote", "lazy learning"]
+  },
+  {
+    "id": "Q11",
+    "category": "ML Fundamentals",
+    "question": "What is the difference between Ridge regression (L2) and Lasso regression (L1)?",
+    "reference_answer": "Both are regularized linear regression techniques designed to prevent overfitting. Ridge regression adds an L2 penalty proportional to the sum of squared coefficients, shrinking coefficients toward zero without setting them to exactly zero. Lasso regression adds an L1 penalty proportional to the sum of absolute values of coefficients, which performs automatic feature selection by forcing uninformative feature coefficients to exactly zero.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["Ridge regression", "Lasso regression", "L1 regularization", "L2 regularization", "feature selection", "penalty"]
+  },
+  {
+    "id": "Q12",
+    "category": "ML Fundamentals",
+    "question": "What causes overfitting in Decision Trees and how can it be prevented?",
+    "reference_answer": "Decision trees overfit when they grow too deep and create overly complex branches that memorize training data noise rather than generalizable rules, leading to 100% training accuracy but poor test accuracy. Overfitting is prevented via pre-pruning (limiting maximum depth `max_depth`, maximum leaf nodes, or minimum samples per split `min_samples_split`) or post-pruning and using ensemble methods like Random Forests.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["decision tree", "overfitting", "pre-pruning", "max_depth", "generalization"]
+  },
+  {
+    "id": "Q13",
+    "category": "ML Fundamentals",
+    "question": "How does a Random Forest ensemble improve upon a single Decision Tree?",
+    "reference_answer": "Random Forest builds an ensemble of randomized decision trees using bootstrap aggregating (bagging) and random feature selection at each split. By training many diverse, slightly overfitted trees on different data subsets and averaging their predictions (or majority voting), Random Forest dramatically reduces variance and prevents overfitting without sacrificing predictive power.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["Random Forest", "ensemble", "bootstrap", "bagging", "variance reduction"]
+  },
+  {
+    "id": "Q14",
+    "category": "ML Fundamentals",
+    "question": "What are the roles of the C and gamma hyperparameters in Support Vector Machines (SVM) with an RBF kernel?",
+    "reference_answer": "In SVM with RBF (Radial Basis Function) kernel: (1) `C` is the regularization parameter controlling the trade-off between maximizing decision margin and minimizing classification errors on training points (high C fits training data strictly; low C produces a simpler decision boundary). (2) `gamma` determines the radius of influence of each support vector (high gamma means each point has a narrow reach leading to complex boundaries; low gamma gives a wide reach and smoother boundaries).",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["SVM", "Support Vector Machine", "RBF kernel", "C parameter", "gamma parameter"]
+  },
+  {
+    "id": "Q15",
+    "category": "ML Fundamentals",
+    "question": "What is Principal Component Analysis (PCA) and what is it used for?",
+    "reference_answer": "PCA is an unsupervised linear transformation technique that rotates feature space to align axes with directions of maximum variance in the data. The first principal component captures the greatest variance, followed by orthogonal components. PCA is widely used for dimensionality reduction, data visualization (reducing to 2D/3D), noise reduction, and feature extraction before training classifiers.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["PCA", "Principal Component Analysis", "dimensionality reduction", "variance", "orthogonal components"]
+  },
+  {
+    "id": "Q16",
+    "category": "ML Fundamentals",
+    "question": "What is k-fold cross-validation and why is it preferred over a single train-test split?",
+    "reference_answer": "In k-fold cross-validation, the dataset is partitioned into k roughly equal-sized folds. The model is trained on k-1 folds and evaluated on the remaining fold, repeating this process k times so every fold serves as the test set once. It provides a more reliable and statistically robust estimate of model generalization, reduces sensitivity to arbitrary train-test splits, and makes better use of limited data.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["k-fold cross-validation", "cross-validation", "generalization", "folds", "variance"]
+  },
+  {
+    "id": "Q17",
+    "category": "NLP & Text Processing",
+    "question": "What is the Bag-of-Words (BoW) representation and how are n-grams used in scikit-learn?",
+    "reference_answer": "The Bag-of-Words (BoW) model represents text documents by tokenizing text and counting the occurrence frequencies of individual words, discarding grammar and word order (using `CountVectorizer`). n-grams extend BoW by counting contiguous sequences of n tokens (e.g., unigrams n=1, bigrams n=2 like 'not good'), which preserves local context and phrase relationships.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["Bag of Words", "BoW", "CountVectorizer", "n-grams", "tokenization"]
+  },
+  {
+    "id": "Q18",
+    "category": "NLP & Text Processing",
+    "question": "How is TF-IDF calculated and why is it useful in text retrieval and classification?",
+    "reference_answer": "TF-IDF (Term Frequency-Inverse Document Frequency) balances word importance by multiplying Term Frequency (how often a word appears in a specific document) by Inverse Document Frequency (logarithm of total documents divided by documents containing the word). It scales down universally common words (like 'the', 'is') and scales up distinctive, domain-specific words that carry high discriminative power for retrieval and classification.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["TF-IDF", "TfidfVectorizer", "term frequency", "inverse document frequency", "weighting"]
+  },
+  {
+    "id": "Q19",
+    "category": "NLP & Text Processing",
+    "question": "What is the difference between stemming and lemmatization in natural language processing?",
+    "reference_answer": "Stemming uses heuristic rule-based trimming (e.g. Porter or Lancaster stemmer) to chop off word prefixes/suffixes, often producing non-dictionary stems (e.g. 'running' -> 'run', 'universe' -> 'univers'). Lemmatization uses vocabulary dictionaries and morphological analysis (e.g. WordNet lemmatizer with Part-of-Speech tagging) to return the linguistically valid base dictionary lemma (e.g. 'better' -> 'good', 'was' -> 'be').",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["stemming", "lemmatization", "Porter stemmer", "WordNet", "morphology", "lemma"]
+  },
+  {
+    "id": "Q20",
+    "category": "NLP & Text Processing",
+    "question": "What is Topic Modeling and how does Latent Dirichlet Allocation (LDA) discover themes?",
+    "reference_answer": "Topic modeling is an unsupervised statistical technique that identifies abstract topics across a collection of text documents. Latent Dirichlet Allocation (LDA) assumes each document is a mixture of various topics, and each topic is a probability distribution over words. It iteratively estimates topic proportions per document and word assignments per topic based on co-occurrence patterns.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["topic modeling", "Latent Dirichlet Allocation", "LDA", "unsupervised", "word distribution"]
+  },
+  {
+    "id": "Q21",
+    "category": "NLP & Text Processing",
+    "question": "How are Precision, Recall, and F1-Score defined and when is F1-score preferred over Accuracy?",
+    "reference_answer": "Precision = TP / (TP + FP) measures the fraction of predicted positive instances that are truly positive. Recall = TP / (TP + FN) measures the fraction of actual positive instances correctly identified. F1-Score is the harmonic mean of Precision and Recall (2 * (P * R) / (P + R)). F1-score is strongly preferred over Accuracy when evaluating imbalanced datasets where predicting the majority class yields deceptively high accuracy.",
+    "expected_sources": ["Introduction to Machine Learning with Python ( PDFDrive.com )-min.pdf"],
+    "key_concepts": ["precision", "recall", "F1-score", "accuracy", "imbalanced datasets", "confusion matrix"]
+  },
+  {
+    "id": "Q22",
+    "category": "Personal Notes & Projects",
+    "question": "What is Sentra and what architecture does it use for cybersecurity anomaly detection?",
+    "reference_answer": "Sentra is a hybrid ML and LLM cybersecurity anomaly detection prototype designed for the FinSpark'26 hackathon (Bank of Maharashtra, Problem Statement 2). It fuses an Isolation Forest machine learning model for quantitative anomaly scoring on telemetry with a Claude API reasoning layer to analyze and explain why specific behavioral and transactional patterns were flagged.",
+    "expected_sources": ["sample_notes.md"],
+    "key_concepts": ["Sentra", "Isolation Forest", "Claude API", "FinSpark", "Bank of Maharashtra", "anomaly detection"]
+  },
+  {
+    "id": "Q23",
+    "category": "Personal Notes & Projects",
+    "question": "What is Flip AI and which feature was cut for the MVP according to the prioritization framework?",
+    "reference_answer": "Flip AI is an e-commerce trust product concept addressing Flipkart's fake review and delivery challenges. Core features include fake review detection, review summarization, delivery delay prediction, return fraud risk scoring, and AI customer support. Using a P0/P1/P2 prioritization framework, AI customer support and personalized recommendations were marked as P2 and cut for the MVP.",
+    "expected_sources": ["sample_notes.md"],
+    "key_concepts": ["Flip AI", "Flipkart", "fake review detection", "P0/P1/P2", "AI customer support", "MVP"]
+  },
+  {
+    "id": "Q24",
+    "category": "Personal Notes & Projects",
+    "question": "What is the user's primary long-term career goal and what dual-track strategy are they following?",
+    "reference_answer": "The user's primary long-term goal is to become an Associate Product Manager (APM) at Google. They are pursuing a dual-track strategy combining AI Product Management and AI Engineering roles, building product sense, technical ML fluency, and translating user problems into product requirements with resources like Inspired, Lenny's Newsletter, and Shreyas Doshi's frameworks.",
+    "expected_sources": ["career_notes.md", "sample_notes.md"],
+    "key_concepts": ["Google APM", "Associate Product Manager", "dual-track", "AI Product Management", "AI Engineering"]
+  },
+  {
+    "id": "Q25",
+    "category": "Personal Notes & Projects",
+    "question": "What certifications has the user completed and what is their upcoming certification roadmap?",
+    "reference_answer": "The user holds the Microsoft Azure AI-900 certification. Their upcoming roadmap targets Azure AI-102 (designing and implementing Azure AI solutions), followed by the Google Project Management Certificate, and later the TensorFlow Developer certification.",
+    "expected_sources": ["career_notes.md", "sample_notes.md"],
+    "key_concepts": ["Azure AI-900", "AI-102", "Google PM Certificate", "TensorFlow Developer"]
+  }
+]

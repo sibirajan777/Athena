@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | Athena</title>
+    <meta name="description" content="Sign in to Athena - your personal AI knowledge assistant">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body id="auth-body">
+    <!-- Floating Particle Canvas Background -->
+    <canvas id="auth-canvas" class="auth-canvas"></canvas>
+
+    <!-- Ambient Glow Orbs -->
+    <div class="auth-ambient-top"></div>
+    <div class="auth-ambient-bottom"></div>
+
+    <div class="auth-wrapper" id="auth-wrapper">
+        <div class="auth-card" id="auth-card">
+            <header class="auth-header">
+                <div class="logo-badge-wrapper">
+                    <div class="logo-orbit-ring ring-sm"></div>
+                    <div class="logo-badge" aria-hidden="true">
+                        <img src="assets/logo-dark.png" alt="Athena Logo" class="logo-img">
+                    </div>
+                </div>
+                <h1 class="stagger-item">Welcome back</h1>
+                <p class="stagger-item">Sign in to continue to Athena</p>
+            </header>
+
+            <div id="alert-box" class="alert hidden" role="alert" aria-live="polite">
+                <span id="alert-icon"></span>
+                <span id="alert-message"></span>
+            </div>
+
+            <form id="login-form" class="auth-form" novalidate>
+                <div class="form-group stagger-item">
+                    <label for="email">Email address</label>
+                    <div class="input-container">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            autocomplete="username" 
+                            placeholder="name@example.com" 
+                            required 
+                            enterkeyhint="next"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group stagger-item">
+                    <label for="password">Password</label>
+                    <div class="input-container with-toggle">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            autocomplete="current-password" 
+                            placeholder="Enter your password" 
+                            required 
+                            enterkeyhint="done"
+                        >
+                        <button type="button" class="toggle-password" data-target="password" aria-label="Toggle password visibility" title="Show password">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn-primary stagger-item">
+                    <span id="btn-text">Sign In</span>
+                    <div id="btn-spinner" class="spinner hidden"></div>
+                </button>
+            </form>
+
+            <footer class="auth-footer stagger-item">
+                Don't have an account? <a href="signup.html" class="auth-link">Sign up</a>
+            </footer>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="auth-particles.js"></script>
+</body>
+</html>

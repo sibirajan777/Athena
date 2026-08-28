@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athena - AI Knowledge Assistant</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        // Immediate auth check: redirect to login if not authenticated
+        if (!localStorage.getItem("athena_token")) {
+            window.location.replace("login.html");
+        }
+        // Initialize Theme from localStorage
+        const savedTheme = localStorage.getItem("athena_theme");
+        if (savedTheme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <script src="splash.js"></script>
+</head>
+<body class="app-body">
+    <!-- Main App Layout (Claude AI Style) -->
+    <div class="app-layout">
+        <!-- Sidebar Backdrop for Mobile -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+        <!-- Left Sidebar: Conversations & Knowledge -->
+        <aside id="sidebar" class="sidebar">
+            <!-- Sidebar Header with Adaptive Athena Logo -->
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="brand-logo">
+                        <img src="assets/logo-dark.png" alt="Athena Logo" class="theme-adaptive-logo">
+                    </div>
+                    <span class="brand-name">Athena</span>
+                </div>
+                <button id="sidebar-close-btn" class="icon-btn close-sidebar-btn" type="button" title="Close sidebar" aria-label="Close sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- New Chat Button -->
+            <div class="sidebar-actions">
+                <button id="new-chat-btn" class="btn-new-chat" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New Chat</span>
+                </button>
+            </div>
+
+            <!-- Conversations List -->
+            <div class="sidebar-section">
+                <div class="section-label">
+                    <span>Recent Chats</span>
+                </div>
+                <div id="conversations-list" class="conversations-list">
+                    <div class="conv-loading">Loading conversations...</div>
+                </div>
+            </div>
+
+            <!-- Knowledge Base Summary Widget (Clickable) -->
+            <div id="sidebar-kb-widget" class="sidebar-kb-widget" title="Click to view all feeded documents">
+                <div class="kb-header">
+                    <div class="kb-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Knowledge Base</span>
+                    </div>
+                    <span id="kb-chunks-badge" class="kb-badge">...</span>
+                </div>
+                <p id="kb-info-text" class="kb-info-text">Connecting knowledge...</p>
+                
+                <div class="kb-widget-actions">
+                    <button id="btn-view-kb-docs" class="btn-kb-view" type="button" title="View all feeded documents">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>View Documents</span>
+                    </button>
+                    <label for="file-input" class="btn-kb-upload" title="Feed PDF or Markdown notes">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Add</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- User Footer Profile & Logout -->
+            <div class="sidebar-footer">
+                <div id="sidebar-profile-card" class="user-profile-pill clickable" title="View Profile & Settings">
+                    <div id="user-avatar" class="user-avatar">B</div>
+                    <div class="user-details">
+                        <span id="user-display-name" class="user-display-name">User</span>
+                        <span id="user-email" class="user-email">user@athena.ai</span>
+                    </div>
+                    <svg class="settings-cog-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+                <button id="logout-btn" class="logout-icon-btn" type="button" title="Sign out" aria-label="Sign out">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Atmospheric Antigravity Canvas & Ambient Glow Layer -->
+            <canvas id="antigravity-canvas" class="antigravity-canvas"></canvas>
+            <div class="ambient-glow ambient-glow-top"></div>
+            <div class="ambient-glow ambient-glow-bottom"></div>
+
+            <!-- Top App Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button id="mobile-toggle-btn" class="icon-btn mobile-menu-btn" type="button" title="Open menu" aria-label="Toggle navigation">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="chat-title-wrapper">
+                        <h2 id="current-chat-title" class="current-chat-title">New Chat</h2>
+                        <button id="rename-title-btn" class="icon-btn-tiny" type="button" title="Rename conversation">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="top-bar-right">
+                    <!-- Theme Toggle Switcher -->
+                    <button id="theme-toggle-btn" class="theme-toggle-btn" type="button" title="Toggle Light / Dark mode">
+                        <svg id="theme-icon-sun" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg id="theme-icon-moon" class="theme-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Top Profile Trigger Avatar -->
+                    <button id="top-profile-btn" class="top-profile-btn" type="button" title="View Profile & Settings">
+                        <span id="top-avatar" class="top-avatar">U</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Notification Banner for uploads or errors -->
+            <div id="app-alert" class="app-alert hidden">
+                <span id="alert-message">Notice</span>
+                <button id="alert-close" class="alert-close-btn" type="button">&times;</button>
+            </div>
+
+            <!-- Chat Scroll Feed Area -->
+            <div id="chat-scroll-area" class="chat-scroll-area">
+                <!-- Welcome Empty State (shown when chat has no messages) -->
+                <div id="welcome-state" class="welcome-state">
+                    <div class="welcome-icon-wrapper">
+                        <div class="antigravity-orbit-ring ring-1"></div>
+                        <div class="antigravity-orbit-ring ring-2"></div>
+                        <div class="welcome-icon">
+                            <img src="assets/logo-dark.png" alt="Athena Logo" class="theme-adaptive-logo">
+                        </div>
+                    </div>
+                    <h1 class="welcome-heading">Welcome to Athena</h1>
+                    <p class="welcome-subtext">Your personal AI knowledge assistant. Ask questions grounded in your uploaded documents and notes.</p>
+                    
+                    <div class="prompt-suggestions">
+                        <button class="prompt-chip" data-prompt="What is machine learning?" type="button">
+                            <span class="chip-title">💡 What is machine learning?</span>
+                            <span class="chip-desc">Extract definitions from notes</span>
+                        </button>
+                        <button class="prompt-chip" data-prompt="Explain the difference between supervised and unsupervised learning" type="button">
+                            <span class="chip-title">📊 Supervised vs Unsupervised</span>
+                            <span class="chip-desc">Key comparison from your ML book</span>
+                        </button>
+                        <button class="prompt-chip" data-prompt="Summarize the main topics in my uploaded documents" type="button">
+                            <span class="chip-title">📑 Summarize Knowledge</span>
+                            <span class="chip-desc">Get an overview of indexed notes</span>
+                        </button>
+                        <button class="prompt-chip" data-prompt="What are decision trees and random forests?" type="button">
+                            <span class="chip-title">🌲 Decision Trees & Forests</span>
+                            <span class="chip-desc">Explore algorithms and concepts</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="messages-container" class="messages-container">
+                    <!-- Dynamic chat messages inserted here -->
+                </div>
+
+                <!-- Thinking / Loading Indicator -->
+                <div id="typing-indicator" class="typing-indicator hidden">
+                    <div class="athena-avatar-bubble">
+                        <img src="assets/logo-dark.png" alt="Athena AI" class="avatar-logo-img theme-adaptive-logo">
+                    </div>
+                    <div class="typing-bubble">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Input Dock (Claude AI Signature Floating Style) -->
+            <div class="input-dock-container">
+                <!-- Hidden Real File Input -->
+                <input type="file" id="file-input" accept=".md,.pdf,.txt,.docx" style="display: none;">
+
+                <form id="chat-form" class="chat-dock-form">
+                    <div class="input-dock-box">
+                        <!-- Attachment Trigger Button -->
+                        <button id="dock-upload-btn" class="dock-action-btn" type="button" title="Attach PDF or Markdown file to knowledge base">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Expanding Question Input -->
+                        <textarea 
+                            id="question-input" 
+                            rows="1" 
+                            placeholder="Message Athena... (Shift+Enter for new line)" 
+                            autocomplete="off" 
+                            required
+                        ></textarea>
+
+                        <!-- Send Button (Claude Black/White Circle with Arrow) -->
+                        <button id="send-btn" class="dock-send-btn" type="submit" title="Send message (Enter)" aria-label="Send message">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="19" x2="12" y2="5"></line>
+                                <polyline points="5 12 12 5 19 12"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="input-disclaimer">
+                    Athena generates responses grounded in your indexed documents.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================================================
+         User Profile & Settings Modal
+         ========================================================================== -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="profile-modal-card">
+            <!-- Modal Top Bar -->
+            <div class="profile-modal-header">
+                <h2>User Profile & Settings</h2>
+                <button id="profile-close-btn" class="icon-btn-close" type="button" title="Close modal">&times;</button>
+            </div>
+
+            <!-- Profile Hero Summary -->
+            <div class="profile-hero">
+                <div id="profile-hero-avatar" class="profile-hero-avatar">B</div>
+                <div class="profile-hero-info">
+                    <h3 id="profile-hero-name">Barath</h3>
+                    <p id="profile-hero-email">barathbarath25108@gmail.com</p>
+                    <span id="profile-member-since" class="profile-member-badge">Member since August 2026</span>
+                </div>
+            </div>
+
+            <!-- Profile Tabs -->
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" data-tab="overview" type="button">📊 Overview</button>
+                <button class="profile-tab-btn" data-tab="edit-profile" type="button">✏️ Edit Profile</button>
+                <button class="profile-tab-btn" data-tab="security" type="button">🔒 Security</button>
+                <button class="profile-tab-btn" data-tab="data" type="button">💾 Data & Export</button>
+            </div>
+
+            <!-- Tab 1: Overview & Stats -->
+            <div id="tab-overview" class="profile-tab-pane active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number" id="stat-convs">0</span>
+                        <span class="stat-label">Conversations</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="stat-messages">0</span>
+                        <span class="stat-label">Messages</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="stat-chunks">0</span>
+                        <span class="stat-label">Indexed Chunks</span>
+                    </div>
+                    <div class="stat-card clickable-stat" id="profile-stat-docs-card" title="Click to view all feeded documents">
+                        <span class="stat-number" id="stat-docs">0</span>
+                        <span class="stat-label">Documents (View ↗)</span>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">Active AI Model</span>
+                        <span class="info-value pill-cyan">Gemini 3.6 Flash</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Account ID</span>
+                        <span class="info-value" id="profile-user-id">#1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Vector Database</span>
+                        <span class="info-value">ChromaDB (Local Persistent)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Edit Profile -->
+            <div id="tab-edit-profile" class="profile-tab-pane">
+                <form id="edit-profile-form" class="profile-form">
+                    <div class="form-group-modern">
+                        <label for="edit-display-name">Display Name</label>
+                        <input type="text" id="edit-display-name" placeholder="Enter your name" required maxlength="40">
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label>Avatar Color Theme</label>
+                        <div class="avatar-colors-picker">
+                            <button type="button" class="color-dot" data-color="#141413" style="background: #141413;" title="Classic Black"></button>
+                            <button type="button" class="color-dot" data-color="#cc785c" style="background: #cc785c;" title="Claude Terracotta"></button>
+                            <button type="button" class="color-dot" data-color="#3b82f6" style="background: #3b82f6;" title="Cobalt"></button>
+                            <button type="button" class="color-dot" data-color="#7c3aed" style="background: #7c3aed;" title="Purple"></button>
+                            <button type="button" class="color-dot" data-color="#059669" style="background: #059669;" title="Emerald"></button>
+                            <button type="button" class="color-dot" data-color="#64748b" style="background: #64748b;" title="Slate"></button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="submit" class="btn-primary-small">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 3: Security (Change Password) -->
+            <div id="tab-security" class="profile-tab-pane">
+                <form id="change-password-form" class="profile-form">
+                    <div class="form-group-modern">
+                        <label for="current-password">Current Password</label>
+                        <input type="password" id="current-password" placeholder="Enter current password" required>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label for="new-password">New Password (min 8 chars)</label>
+                        <input type="password" id="new-password" placeholder="At least 8 characters" minlength="8" required>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label for="confirm-new-password">Confirm New Password</label>
+                        <input type="password" id="confirm-new-password" placeholder="Repeat new password" minlength="8" required>
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="submit" class="btn-primary-small">Update Password</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 4: Data & Export -->
+            <div id="tab-data" class="profile-tab-pane">
+                <div class="data-actions-list">
+                    <div class="data-action-card">
+                        <div>
+                            <h4>Export Chat History</h4>
+                            <p>Download a complete JSON export of all your conversations and messages.</p>
+                        </div>
+                        <button id="btn-export-chats" class="btn-secondary" type="button">Download JSON</button>
+                    </div>
+
+                    <div class="data-action-card danger">
+                        <div>
+                            <h4>Clear All Chats</h4>
+                            <p>Permanently delete all your conversation history from Athena.</p>
+                        </div>
+                        <button id="btn-clear-chats" class="btn-danger-small" type="button">Clear All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="profile-modal-footer">
+                <button id="profile-modal-logout-btn" class="btn-logout-alt" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Sign Out</span>
+                </button>
+                <button id="profile-done-btn" class="btn-secondary" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Conversation Modal -->
+    <div id="rename-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>Rename Conversation</h3>
+            <form id="rename-form">
+                <input type="text" id="rename-input" placeholder="Conversation title" required maxlength="60">
+                <div class="modal-actions">
+                    <button type="button" id="rename-cancel-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary-small">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         Knowledge Base Documents Manager Modal
+         ========================================================================== -->
+    <div id="kb-modal" class="modal-overlay hidden">
+        <div class="kb-modal-card">
+            <!-- Modal Header -->
+            <div class="kb-modal-header">
+                <div class="kb-modal-title-wrap">
+                    <div class="kb-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2>Athena Knowledge Base</h2>
+                        <p class="kb-modal-subtitle">Documents and notes fed to Athena for grounding AI responses</p>
+                    </div>
+                </div>
+                <button id="kb-close-btn" class="icon-btn-close" type="button" title="Close modal">&times;</button>
+            </div>
+
+            <!-- Stats & Quick Action Bar -->
+            <div class="kb-hero-bar">
+                <div class="kb-hero-stat-card">
+                    <span class="kb-stat-val" id="kb-modal-total-docs">0</span>
+                    <span class="kb-stat-lbl">Feeded Documents</span>
+                </div>
+                <div class="kb-hero-stat-card">
+                    <span class="kb-stat-val" id="kb-modal-total-chunks">0</span>
+                    <span class="kb-stat-lbl">Total Chunks</span>
+                </div>
+                <div class="kb-hero-stat-card hide-mobile">
+                    <span class="kb-stat-val">ChromaDB</span>
+                    <span class="kb-stat-lbl">Vector Engine</span>
+                </div>
+                <label for="file-input" class="btn-kb-feed-new" title="Upload and index a new PDF or Markdown file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Feed New File</span>
+                </label>
+            </div>
+
+            <!-- Search Filter Bar -->
+            <div class="kb-filter-row">
+                <div class="kb-search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="kb-search-input" placeholder="Search feeded documents by name...">
+                </div>
+                <button id="kb-refresh-btn" class="kb-refresh-btn" type="button" title="Refresh knowledge documents">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+
+            <!-- Documents List Container -->
+            <div id="kb-docs-container" class="kb-docs-container">
+                <div class="kb-loading">
+                    <div class="spinner"></div>
+                    <span>Loading feeded documents...</span>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="kb-modal-footer">
+                <div class="kb-footer-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>All queries in Athena retrieve relevant context from these indexed documents.</span>
+                </div>
+                <button id="kb-done-btn" class="btn-primary-small" type="button">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         Document Chunk Inspector / Preview Modal
+         ========================================================================== -->
+    <div id="doc-preview-modal" class="modal-overlay hidden">
+        <div class="doc-preview-card">
+            <div class="doc-preview-header">
+                <div class="doc-preview-header-info">
+                    <h3 id="preview-doc-title">Document Chunks</h3>
+                    <p id="preview-doc-meta" class="doc-preview-meta">Sample extracted vector chunks</p>
+                </div>
+                <button id="preview-close-btn" class="icon-btn-close" type="button" title="Close preview">&times;</button>
+            </div>
+            <div id="preview-chunks-list" class="preview-chunks-list">
+                <!-- Chunks inserted dynamically -->
+            </div>
+            <div class="doc-preview-footer">
+                <button id="preview-done-btn" class="btn-secondary" type="button">Close Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         Citation Panel (Feature 2) — slides in from the right
+         ================================================================ -->
+    <div id="citation-panel" class="citation-panel hidden" role="dialog" aria-modal="true" aria-label="Source Citation">
+        <div class="citation-panel-inner">
+            <div class="citation-panel-header">
+                <div class="citation-panel-title-wrap">
+                    <span class="citation-panel-ref" id="citation-ref-badge">[1]</span>
+                    <h3 class="citation-panel-title">Source Citation</h3>
+                </div>
+                <button id="citation-close-btn" class="icon-btn-close" type="button" title="Close citation panel">&times;</button>
+            </div>
+            <div class="citation-panel-meta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span id="citation-source-name" class="citation-source">Document</span>
+                <span id="citation-location" class="citation-location"></span>
+            </div>
+            <div class="citation-panel-body">
+                <p class="citation-body-label">Cited chunk text</p>
+                <blockquote id="citation-chunk-text" class="citation-chunk"></blockquote>
+            </div>
+            <div class="citation-panel-footer">
+                <button id="citation-open-kb-btn" class="btn-secondary" type="button">View in Knowledge Base</button>
+                <button id="citation-done-btn" class="btn-primary-sm" type="button">Done</button>
+            </div>
+        </div>
+    </div>
+    <div id="citation-overlay" class="citation-overlay hidden"></div>
+
+    <script src="antigravity.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
