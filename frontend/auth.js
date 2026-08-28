@@ -287,12 +287,17 @@ function initLogin(form) {
             const data = await response.json();
 
             if (response.ok && data.token) {
+                const derivedName = (data.user && data.user.display_name) || (email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1));
+                const userObj = data.user || {
+                    email: email,
+                    display_name: derivedName,
+                    avatar_color: "#10a37f"
+                };
+                if (!userObj.display_name) userObj.display_name = derivedName;
+
                 // Save auth token & user info to localStorage
                 localStorage.setItem("athena_token", data.token);
-                localStorage.setItem(
-                    "athena_user", 
-                    JSON.stringify(data.user || { email: email })
-                );
+                localStorage.setItem("athena_user", JSON.stringify(userObj));
 
                 showAlert("success", "Signed in successfully! Redirecting to Athena...");
 

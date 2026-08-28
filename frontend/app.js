@@ -464,6 +464,15 @@ async function loadUserProfile() {
 
         if (res.ok) {
             const data = await res.json();
+            const cached = localStorage.getItem("athena_user");
+            if (cached && (data.email === "user@athena.ai" || data.display_name === "User")) {
+                try {
+                    const u = JSON.parse(cached);
+                    if (u.email && u.email !== "user@athena.ai") data.email = u.email;
+                    if (u.display_name && u.display_name !== "User") data.display_name = u.display_name;
+                    if (u.avatar_color) data.avatar_color = u.avatar_color;
+                } catch(e) {}
+            }
             localStorage.setItem("athena_user", JSON.stringify(data));
             renderUserProfileUI(data);
         }

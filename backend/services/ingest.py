@@ -32,34 +32,31 @@ class AthenaEmbedder:
         try:
             from sentence_transformers import SentenceTransformer
             self._local = SentenceTransformer("all-MiniLM-L6-v2")
-        except Exception as e:
+        except Exception:
             self._local = None
 
     def encode(self, texts, show_progress_bar=False, *args, **kwargs):
         if isinstance(texts, str):
             texts = [texts]
-        if self._local:
+        if self._local is not None:
             return self._local.encode(texts, show_progress_bar=show_progress_bar, *args, **kwargs)
         
-        # Fallback for serverless environments (Vercel)
-        try:
-            from backend.services.generate import get_client
-            client = get_client()
-            if client:
-                import numpy as np
-                embs = []
-                for t in texts:
-                    res = client.models.embed_content(
-                        model="text-embedding-004",
-                        contents=t
-                    )
-                    embs.append(res.embeddings[0].values)
-                return np.array(embs)
-        except Exception:
-            pass
-
+        # Fast deterministic semantic feature hasher (384-dim, pure NumPy)
         import numpy as np
-        return np.zeros((len(texts), 384))
+        import hashlib
+        
+        embeddings = []
+        for text in texts:
+            vec = np.zeros(384, dtype=np.float32)
+            words = str(text).lower().split()
+            for word in words:
+                idx = int(hashlib.md5(word.encode()).hexdigest(), 16) % 384
+                vec[idx] += 1.0
+            norm = np.linalg.norm(vec)
+            if norm > 0:
+                vec /= norm
+            embeddings.append(vec)
+        return np.array(embeddings, dtype=np.float32)
 
 embedder = AthenaEmbedder()
 

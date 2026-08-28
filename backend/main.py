@@ -57,9 +57,10 @@ def on_startup():
     init_db()
 
 # --- Auth Helper ---
-def get_current_user_id(authorization: Optional[str] = Header(None)) -> int:
+def get_current_user_payload(authorization: Optional[str] = Header(None)) -> dict:
+    default_user = {"user_id": 1, "email": "sibirajan488@gmail.com", "display_name": "Sibirajan", "avatar_color": "#10a37f"}
     if not authorization:
-        return 1
+        return default_user
     
     parts = authorization.split(" ")
     token = parts[1] if len(parts) == 2 and parts[0].lower() == "bearer" else authorization
@@ -67,14 +68,27 @@ def get_current_user_id(authorization: Optional[str] = Header(None)) -> int:
     try:
         payload = decode_token(token)
         user_id = int(payload.get("user_id", 1))
-        email = payload.get("email", "")
+        email = payload.get("email") or "sibirajan488@gmail.com"
+        name = payload.get("display_name") or email.split("@")[0].capitalize()
+        
+        # Ensure user exists in current container SQLite
         user = get_user_by_id(user_id)
         if not user and email:
-            created = create_user(email, "session_pass_2026")
+            created = create_user(email, "session_pass_2026", display_name=name)
             user_id = created["id"]
-        return user_id
+            user = created
+        
+        return {
+            "user_id": user_id,
+            "email": email,
+            "display_name": user.get("display_name") if user else name,
+            "avatar_color": user.get("avatar_color", "#10a37f") if user else "#10a37f"
+        }
     except Exception:
-        return 1
+        return default_user
+
+def get_current_user_id(user_info: dict = Depends(get_current_user_payload)) -> int:
+    return user_info["user_id"]
 
 # --- Request / Response Models ---
 class SignupRequest(BaseModel):
@@ -203,10 +217,17 @@ def settings_status():
 
 # --- User Profile Endpoints ---
 @app.get("/user/profile")
-def get_profile(user_id: int = Depends(get_current_user_id)):
-    profile = get_user_profile(user_id)
-    if not profile:
-        raise HTTPException(status_code=404, detail="User not found")
+def get_profile(user_info: dict = Depends(get_current_user_payload)):
+    profile = get_user_profile(user_info["user_id"])
+    if not profile or profile.get("email") == "user@athena.ai":
+        profile = {
+            "id": user_info["user_id"],
+            "email": user_info["email"],
+            "display_name": user_info["display_name"],
+            "avatar_color": user_info["avatar_color"],
+            "created_at": datetime.utcnow().strftime("%B %Y"),
+            "stats": {"total_conversations": 0, "total_messages": 0}
+        }
     
     # Attach knowledge base global stats
     kb_stats = get_collection_stats()
@@ -248,35 +269,25 @@ def clear_all_chats(user_id: int = Depends(get_current_user_id)):
     deleted_count = clear_all_user_conversations(user_id)
     return {"status": "success", "deleted_conversations": deleted_count}
 
-# --- Knowledge Base Stats & Ingestion ---
+# --- Retrieval & Ingestion Endpoints ---
 @app.get("/knowledge/stats")
 def knowledge_stats(user_id: int = Depends(get_current_user_id)):
-    stats = get_collection_stats()
-    return stats
+    return get_collection_stats()
 
 @app.get("/knowledge/documents")
-def list_knowledge_documents(user_id: int = Depends(get_current_user_id)):
-    """Returns detailed metadata and chunk counts for all uploaded documents."""
-    return get_detailed_documents_list()
-
-@app.get("/knowledge/documents/{filename}/preview")
-def preview_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
-    """Returns sample chunks and preview text for a specific document."""
-    res = get_document_preview(filename)
-    if "error" in res:
-        raise HTTPException(status_code=404, detail=res["error"])
-    return res
+def knowledge_documents(user_id: int = Depends(get_current_user_id)):
+    return get_indexed_documents()
 
 @app.delete("/knowledge/documents/{filename}")
-def delete_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
-    """Removes a document from disk and deletes all its vector embeddings from ChromaDB."""
-    success = delete_document(filename)
-    if not success:
-        raise HTTPException(status_code=400, detail=f"Failed to delete document '{filename}'")
-    return {"status": "success", "message": f"Document '{filename}' removed from knowledge base."}
+async def delete_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
+    try:
+        deleted_chunks = await run_in_threadpool(delete_document, filename)
+        return {"status": "success", "filename": filename, "deleted_chunks": deleted_chunks}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/knowledge/documents/{filename}/reindex")
-async def reindex_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
+@app.post("/knowledge/reindex/{filename}")
+async def reindex_single_document(filename: str, user_id: int = Depends(get_current_user_id)):
     """Re-chunks and re-embeds an existing document."""
     try:
         chunks_added = await run_in_threadpool(reindex_document, filename)
@@ -291,21 +302,27 @@ async def ingest_document(
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id)
 ):
-    save_path = DATA_DIR / file.filename
-    content = await file.read()
-    with open(save_path, "wb") as f:
-        f.write(content)
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        safe_filename = os.path.basename(file.filename or "uploaded_document.pdf")
+        save_path = DATA_DIR / safe_filename
+        content = await file.read()
+        with open(save_path, "wb") as f:
+            f.write(content)
 
-    # Ingest in threadpool to keep async loop unblocked
-    total_added = await run_in_threadpool(ingest_file, str(save_path))
-    stats = get_collection_stats()
+        # Ingest in threadpool to keep async loop unblocked
+        total_added = await run_in_threadpool(ingest_file, str(save_path))
+        stats = get_collection_stats()
 
-    return {
-        "status": "success",
-        "filename": file.filename,
-        "chunks_added": total_added,
-        "total_chunks": stats["total_chunks"]
-    }
+        return {
+            "status": "success",
+            "filename": safe_filename,
+            "chunks_added": total_added,
+            "total_chunks": stats["total_chunks"]
+        }
+    except Exception as e:
+        print(f"[ingest_document error]: {e}")
+        raise HTTPException(status_code=500, detail=f"File processing error: {str(e)}")
 
 # --- Conversation History Endpoints (Claude AI-Style) ---
 @app.get("/conversations")

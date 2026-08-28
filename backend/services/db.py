@@ -17,10 +17,11 @@ JWT_SECRET = os.getenv("JWT_SECRET", "athena-super-secret-jwt-key-2026-productio
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 24 * 7  # 7 days
 
-def create_token(user_id: int, email: str) -> str:
+def create_token(user_id: int, email: str, display_name: str = None) -> str:
     payload = {
         "user_id": user_id,
         "email": email,
+        "display_name": display_name or email.split("@")[0].capitalize(),
         "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
