@@ -2,6 +2,11 @@ import re
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
+
 # Only enforce offline mode locally when models are pre-cached, allowing Vercel to download on startup
 if not os.environ.get("VERCEL"):
     os.environ["HF_HUB_OFFLINE"] = "1"
@@ -16,13 +21,33 @@ try:
 except ImportError:
     _DOCX_AVAILABLE = False
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-chroma_path = Path("/tmp/chroma_db") if os.environ.get("VERCEL") else (PROJECT_ROOT / "chroma_db")
 DATA_DIR = Path("/tmp/data") if os.environ.get("VERCEL") else (PROJECT_ROOT / "data")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-# ChromaDB client — persists to disk
-chroma_client = chromadb.PersistentClient(path=str(chroma_path), settings=chromadb.config.Settings(anonymized_telemetry=False))
+# ChromaDB client — Supports Chroma Cloud (Hosted) & Local Persistent Fallback
+def _init_chroma_client():
+    api_key = os.getenv("CHROMA_API_KEY") or os.getenv("CHROMA_CLOUD_API_KEY")
+    tenant = os.getenv("CHROMA_TENANT") or "default_tenant"
+    database = os.getenv("CHROMA_DATABASE") or "default_database"
+
+    if api_key:
+        print("[ChromaDB] Connecting to Chroma Cloud hosted vector store...")
+        return chromadb.CloudClient(
+            tenant=tenant,
+            database=database,
+            api_key=api_key,
+            settings=chromadb.config.Settings(anonymized_telemetry=False)
+        )
+    
+    # Local persistent vector database fallback
+    chroma_path = Path("/tmp/chroma_db") if os.environ.get("VERCEL") else (PROJECT_ROOT / "chroma_db")
+    chroma_path.mkdir(parents=True, exist_ok=True)
+    return chromadb.PersistentClient(
+        path=str(chroma_path),
+        settings=chromadb.config.Settings(anonymized_telemetry=False)
+    )
+
+chroma_client = _init_chroma_client()
 collection = chroma_client.get_or_create_collection(name="athena_knowledge")
 
 # Resilient & Lightweight Embedding Adapter
@@ -255,12 +280,9 @@ def get_detailed_documents_list() -> dict:
             print(f"Error getting metadatas: {e}")
 
         docs_list = []
-        found_names = set()
-
         if DATA_DIR.exists():
             for f in sorted(DATA_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
                 if f.is_file():
-                    found_names.add(f.name)
                     stat = f.stat()
                     size_bytes = stat.st_size
                     if size_bytes < 1024:
@@ -284,20 +306,6 @@ def get_detailed_documents_list() -> dict:
                         "indexed": chunks > 0
                     })
 
-        # Add any sources indexed in ChromaDB that may not be on local container disk
-        for src, chunks in source_counts.items():
-            if src not in found_names:
-                ext = Path(src).suffix.upper().replace(".", "") or "PDF"
-                docs_list.append({
-                    "filename": src,
-                    "size": "Indexed",
-                    "size_bytes": 0,
-                    "type": ext,
-                    "modified_at": "Indexed in Athena",
-                    "chunks": chunks,
-                    "indexed": True
-                })
-
         return {
             "total_chunks": total_chunks,
             "document_count": len(docs_list),
@@ -314,6 +322,10 @@ def get_detailed_documents_list() -> dict:
 def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
     """Returns sample indexed chunks and text snippets for a given document."""
     try:
+        file_path = DATA_DIR / filename
+        if not file_path.exists():
+            return {"error": "Document not found on disk"}
+
         # Query ChromaDB for chunks belonging to this document
         results = collection.get(
             where={"source": filename},
@@ -329,11 +341,10 @@ def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
                     "text": doc_text[:400] + ("..." if len(doc_text) > 400 else "")
                 })
 
-        file_path = DATA_DIR / filename
-        size_bytes = file_path.stat().st_size if file_path.exists() else 0
+        stat = file_path.stat()
         return {
             "filename": filename,
-            "size_bytes": size_bytes,
+            "size_bytes": stat.st_size,
             "total_chunks_found": len(results.get("documents", [])),
             "chunks_preview": chunks_preview
         }
