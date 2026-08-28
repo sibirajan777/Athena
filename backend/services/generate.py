@@ -33,11 +33,11 @@ def get_client():
 _MODEL_COOLDOWNS: dict[str, float] = {}
 
 CANDIDATE_MODELS = [
-    "gemini-3.5-flash-lite",  # High throughput, fast latency (700ms - 1.5s)
     "gemini-3.5-flash",
-    "gemini-3.7-flash",
-    "gemini-3.1-flash-lite",
     "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
 ]
 
 def get_active_models() -> list[str]:
