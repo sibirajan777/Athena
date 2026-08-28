@@ -7,12 +7,16 @@ function getApiBase() {
     if (window.location.protocol === "file:") {
         return "http://127.0.0.1:8000";
     }
-    if (window.location.port === "8000") {
+    // Deployed environment (Vercel, custom domain, etc.) — always use same origin
+    if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
         return window.location.origin;
     }
-    const host = window.location.hostname || "127.0.0.1";
-    const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-    return `${protocol}//${host}:8000`;
+    // Localhost: if served directly on port 8000 or default port
+    if (window.location.port === "8000" || !window.location.port) {
+        return window.location.origin;
+    }
+    // Localhost with alternate port (e.g. VS Code Live Server 5500) -> hit backend on 8000
+    return `http://${window.location.hostname}:8000`;
 }
 
 const API_BASE = getApiBase();
