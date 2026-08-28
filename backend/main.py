@@ -40,8 +40,8 @@ from backend.services.db import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_PATH = PROJECT_ROOT / "frontend"
-DATA_DIR = PROJECT_ROOT / "data"
-DATA_DIR.mkdir(exist_ok=True)
+DATA_DIR = Path("/tmp/data") if os.environ.get("VERCEL") else (PROJECT_ROOT / "data")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Athena API")
 

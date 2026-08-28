@@ -1,11 +1,15 @@
 import re
 import os
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+from pathlib import Path
+
+# Only enforce offline mode locally when models are pre-cached, allowing Vercel to download on startup
+if not os.environ.get("VERCEL"):
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import datetime
 import chromadb
 from sentence_transformers import SentenceTransformer
-from pathlib import Path
 from pypdf import PdfReader
 try:
     from docx import Document as DocxDocument
@@ -14,11 +18,11 @@ except ImportError:
     _DOCX_AVAILABLE = False
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-chroma_path = PROJECT_ROOT / "chroma_db"
-DATA_DIR = PROJECT_ROOT / "data"
-DATA_DIR.mkdir(exist_ok=True)
+chroma_path = Path("/tmp/chroma_db") if os.environ.get("VERCEL") else (PROJECT_ROOT / "chroma_db")
+DATA_DIR = Path("/tmp/data") if os.environ.get("VERCEL") else (PROJECT_ROOT / "data")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-# ChromaDB client — persists to disk in ./chroma_db
+# ChromaDB client — persists to disk
 chroma_client = chromadb.PersistentClient(path=str(chroma_path), settings=chromadb.config.Settings(anonymized_telemetry=False))
 collection = chroma_client.get_or_create_collection(name="athena_knowledge")
 

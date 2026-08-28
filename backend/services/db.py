@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 
-DB_PATH = PROJECT_ROOT / "athena.db"
+DB_PATH = Path("/tmp/athena.db") if os.environ.get("VERCEL") else (PROJECT_ROOT / "athena.db")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "athena-super-secret-jwt-key-2026-production-vault")
 JWT_ALGORITHM = "HS256"
