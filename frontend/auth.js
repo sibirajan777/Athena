@@ -201,17 +201,26 @@ function initSignup(form) {
             const data = await response.json();
 
             if (response.ok) {
-                showAlert("success", "Account created successfully! Redirecting to Sign In...");
+                showAlert("success", "Account created successfully! Welcome to Athena...");
                 
+                // Auto-authenticate immediately if token returned
+                if (data.token) {
+                    localStorage.setItem("athena_token", data.token);
+                    localStorage.setItem("athena_user", JSON.stringify(data.user || { email: email }));
+                }
+
                 // Disable inputs during redirect
                 emailInput.disabled = true;
                 passwordInput.disabled = true;
                 confirmPasswordInput.disabled = true;
 
-                // Move to sign in page after signup with email pre-populated
                 setTimeout(() => {
-                    window.location.href = `login.html?registered=true&email=${encodeURIComponent(email)}`;
-                }, 1200);
+                    if (data.token) {
+                        window.location.href = "index.html";
+                    } else {
+                        window.location.href = `login.html?registered=true&email=${encodeURIComponent(email)}`;
+                    }
+                }, 800);
             } else {
                 setButtonLoading(false, "Create Account");
                 const errorMsg = data.detail || "Registration failed. Please try again.";

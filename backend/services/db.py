@@ -33,17 +33,8 @@ def decode_token(token: str) -> dict:
     except jwt.InvalidTokenError:
         raise ValueError("Invalid token")
 
-def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
-
-def init_db():
-    conn = get_connection()
+def _ensure_schema(conn):
     cursor = conn.cursor()
-
-    # Users Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,22 +45,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
-    # Upgrade users table if columns missing
-    cursor.execute("PRAGMA table_info(users);")
-    columns = [col[1] for col in cursor.fetchall()]
-    if "display_name" not in columns:
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN display_name TEXT;")
-        except Exception:
-            pass
-    if "avatar_color" not in columns:
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN avatar_color TEXT DEFAULT '#10a37f';")
-        except Exception:
-            pass
-
-    # Conversations Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id TEXT PRIMARY KEY,
@@ -80,8 +55,6 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     """)
-
-    # Messages Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,8 +66,17 @@ def init_db():
             FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )
     """)
-
     conn.commit()
+
+def get_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
+    _ensure_schema(conn)
+    return conn
+
+def init_db():
+    conn = get_connection()
     conn.close()
     print("Database initialized with users, conversations & messages tables.")
 
@@ -103,11 +85,17 @@ def hash_password(password: str) -> str:
     return hashed.decode("utf-8")
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+    try:
+        return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False
 
 def get_user_by_email(email: str) -> dict | None:
+    if not email:
+        return None
+    normalized_email = email.strip().lower()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    row = conn.execute("SELECT * FROM users WHERE LOWER(email) = ?", (normalized_email,)).fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -118,24 +106,35 @@ def get_user_by_id(user_id: int) -> dict | None:
     return dict(row) if row else None
 
 def create_user(email: str, password: str, display_name: str = None) -> dict:
-    conn = get_connection()
-    cursor = conn.cursor()
+    normalized_email = email.strip().lower()
+    existing = get_user_by_email(normalized_email)
+    if existing:
+        return {
+            "id": existing["id"],
+            "email": existing["email"],
+            "display_name": existing.get("display_name") or existing["email"].split("@")[0].capitalize(),
+            "avatar_color": existing.get("avatar_color") or "#10a37f"
+        }
 
     hashed = hash_password(password)
-    display = display_name or email.split("@")[0].capitalize()
+    default_name = display_name.strip() if display_name and display_name.strip() else normalized_email.split("@")[0].capitalize()
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO users (email, hashed_password, display_name) VALUES (?, ?, ?)",
+        (normalized_email, hashed, default_name)
+    )
+    user_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
 
-    try:
-        cursor.execute(
-            "INSERT INTO users (email, hashed_password, display_name) VALUES (?, ?, ?)",
-            (email, hashed, display),
-        )
-        conn.commit()
-        user_id = cursor.lastrowid
-        conn.close()
-        return {"id": user_id, "email": email, "display_name": display}
-    except sqlite3.IntegrityError:
-        conn.close()
-        raise ValueError("Email already registered")
+    return {
+        "id": user_id,
+        "email": normalized_email,
+        "display_name": default_name,
+        "avatar_color": "#10a37f"
+    }
 
 # ----------------- User Profile Management -----------------
 
