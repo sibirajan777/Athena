@@ -27,15 +27,15 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # ChromaDB client — Supports Chroma Cloud (Hosted) & Local Persistent Fallback
 def _init_chroma_client():
     api_key = os.getenv("CHROMA_API_KEY") or os.getenv("CHROMA_CLOUD_API_KEY")
-    tenant = os.getenv("CHROMA_TENANT") or "default_tenant"
-    database = os.getenv("CHROMA_DATABASE") or "default_database"
+    tenant = os.getenv("CHROMA_TENANT") or "c804a584-5429-4b81-9477-619df14eb8e3"
+    database = os.getenv("CHROMA_DATABASE") or "athena"
 
     if api_key:
-        print("[ChromaDB] Connecting to Chroma Cloud hosted vector store...")
+        print(f"[ChromaDB] Connecting to Chroma Cloud ({database} @ {tenant})...")
         return chromadb.CloudClient(
             tenant=tenant,
             database=database,
-            api_key=api_key,
+            api_key=api_key.strip(),
             settings=chromadb.config.Settings(anonymized_telemetry=False)
         )
     
