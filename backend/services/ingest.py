@@ -35,11 +35,11 @@ class AthenaEmbedder:
         except Exception as e:
             self._local = None
 
-    def encode(self, texts, show_progress_bar=False):
+    def encode(self, texts, show_progress_bar=False, *args, **kwargs):
         if isinstance(texts, str):
             texts = [texts]
         if self._local:
-            return self._local.encode(texts, show_progress_bar=show_progress_bar)
+            return self._local.encode(texts, show_progress_bar=show_progress_bar, *args, **kwargs)
         
         # Fallback for serverless environments (Vercel)
         try:
