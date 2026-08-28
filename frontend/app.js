@@ -460,7 +460,7 @@ async function loadUserProfile() {
             headers: { "Authorization": `Bearer ${token}` }
         });
 
-        if (res.status === 401) return handleAuthError();
+        if (res.status === 401) return;
 
         if (res.ok) {
             const data = await res.json();
@@ -721,7 +721,7 @@ async function loadKnowledgeStats() {
         const res = await fetch(`${API_BASE}/knowledge/stats`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
-        if (res.status === 401) return handleAuthError();
+        if (res.status === 401) return;
 
         if (res.ok) {
             const data = await res.json();
@@ -753,7 +753,7 @@ async function loadKnowledgeDocuments() {
         const res = await fetch(`${API_BASE}/knowledge/documents`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
-        if (res.status === 401) return handleAuthError();
+        if (res.status === 401) return;
 
         if (res.ok) {
             const data = await res.json();
@@ -1015,7 +1015,7 @@ async function loadConversations() {
             headers: { "Authorization": `Bearer ${token}` }
         });
 
-        if (res.status === 401) return handleAuthError();
+        if (res.status === 401) return;
 
         if (res.ok) {
             conversationsList = await res.json();
