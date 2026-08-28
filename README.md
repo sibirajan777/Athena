@@ -1,184 +1,239 @@
-# 🦉 Athena — AI-Powered Personal Knowledge Assistant
+# 🏛️ Athena: Enterprise-Grade Hybrid RAG Knowledge Assistant
 
-> **Final Year Project** · Retrieval-Augmented Generation (RAG) System with Confidence Scoring, Citation Click-Through, and Quantitative Evaluation Framework.
+Athena is an intelligent, privacy-first **Hybrid Retrieval-Augmented Generation (RAG) Knowledge Assistant** and personal "Second Brain." Built with **FastAPI**, **ChromaDB**, **Sentence Transformers**, and the **Google Gemini API**, Athena enables users to ingest, index, and query unstructured documents (PDFs, Markdown notes, research papers, and code snippets) with millisecond search speeds, verifiable in-text citations, and empirical confidence calibration.
 
----
-
-## ✨ Features
-
-| Category | Feature |
-|---|---|
-| 🔍 **Retrieval** | Hybrid Vector + BM25 (RRF fusion) retrieval via ChromaDB |
-| 🤖 **Generation** | Gemini API with multi-model circuit-breaker fallback |
-| 🎯 **Confidence** | Calibrated confidence tiers (High / Medium / Low) per answer |
-| 📎 **Citations** | Clickable citation chips linking answers back to source chunks |
-| 📊 **Evaluation** | Full quantitative benchmark framework (Precision@k, Recall@k, MRR, Semantic Similarity) |
-| 🔐 **Auth** | JWT-based sign-up / login with conversation history persistence |
-| 💾 **Ingestion** | Upload PDF / Markdown / text files and index into ChromaDB |
+![Athena Architecture & Retrieval Comparison](eval_comparison.png)
 
 ---
 
-## 🏗️ Architecture
+## 🌟 Key Features
+
+### 1. 🔍 Hybrid Retrieval Architecture (Dense Vector + BM25 Lexical)
+- Combines semantic vector similarity search via `all-MiniLM-L6-v2` embeddings with exact keyword BM25 retrieval (`rank_bm25`).
+- Uses **Reciprocal Rank Fusion (RRF)** with smoothing parameter $k=60$ to rank retrieved chunks, preventing vocabulary mismatch and achieving **$100\%$ Recall@3** on benchmark evaluations.
+
+### 2. 🎯 Calibrated Confidence & Grounding Indicator
+- Automatically computes semantic grounding scores for every generated answer based on retrieved chunk distances and relevance peaks.
+- Displays color-coded badges in the UI:
+  - 🟢 **High Confidence**: Strong contextual grounding ($\ge 0.67$ average score or $\ge 0.74$ top chunk similarity).
+  - 🟡 **Medium Confidence**: Moderate semantic grounding ($\ge 0.52$ average score).
+  - 🔴 **Low Confidence**: Weak grounding — flagged for manual verification.
+
+### 3. 📑 Verifiable In-Text Citations & Side Panel Inspector
+- Generates inline citation chips (e.g., `[1]`, `[2][4]`) corresponding to retrieved document context.
+- Clicking any citation opens a slide-over panel displaying the exact source snippet, file name, chunk ID, and similarity score.
+- Full keyboard navigation and `Esc` dismissal support.
+
+### 4. ⚡ Resilient Multi-Model Router & Circuit Breaker
+- Intelligent fallback routing: `gemini-3.5-flash-lite` ➔ `gemini-3.5-flash` ➔ `gemini-3.7-flash` ➔ `gemini-3.1-flash-lite`.
+- Automatic 60-second in-memory **Circuit Breaker** on `429 RESOURCE_EXHAUSTED` errors with zero-delay failover ($<100\text{ ms}$).
+- Average end-to-end response latency: **$1.85\text{ seconds}$** with sub-$20\text{ ms}$ retrieval.
+
+### 5. 🔐 Multi-User Authentication & Conversation History
+- Secure password hashing with `bcrypt` and stateless JWT-based session management.
+- Multi-session chat threads, title renaming, and deletion backed by SQLite database (`athena.db`).
+
+### 6. ✨ Antigravity Design System & Visual Polish
+- Modern dark mode with glassmorphism, glowing accents, animated splash screen, and interactive canvas particles.
+- Responsive sidebar navigation, document manager modal, and real-time knowledge base statistics.
+
+---
+
+## 📊 Quantitative Benchmarks & Evaluation
+
+Athena includes a standalone evaluation suite (`evaluate.py`) benchmarking retrieval performance, generation fidelity, and latency across a 25-question ground-truth test set (`eval_dataset.json`).
+
+### 1. Retrieval Performance: Vector vs. Hybrid
+
+| Retrieval Metric | Dense Vector-Only | Hybrid (Vector + BM25 RRF) | Relative Gain |
+|---|---|---|---|
+| **Precision@3** | `0.7600` | **`0.8133`** | **+7.01%** |
+| **Precision@5** | `0.7120` | **`0.7600`** | **+6.74%** |
+| **Recall@3** | `0.9200` | **`1.0000`** | **+8.70%** |
+| **Recall@5** | `0.9600` | **`1.0000`** | **+4.17%** |
+| **MRR (Mean Reciprocal Rank)** | `0.8833` | **`0.9267`** | **+4.91%** |
+
+### 2. Answer Quality & Confidence Calibration
+
+| Metric | Measured Value | Description |
+|---|---|---|
+| **Mean Semantic Similarity** | `0.7805` | Cosine similarity between generated answer and ground-truth reference |
+| **Mean Token F1 Score** | `0.2270` | Lexical overlap harmonic mean |
+| **High Confidence Tier Avg Sim** | `0.7840` (9 samples, 36%) | Answers grounded in strong context matches |
+| **Medium Confidence Tier Avg Sim** | `0.7838` (13 samples, 52%) | Answers grounded in moderate context matches |
+| **Low Confidence Tier Avg Sim** | `0.7554` (3 samples, 12%) | Speculative or weak context matches |
+
+### 3. Pipeline Latency Profiling
+
+| Pipeline Stage | Mean | Median | Min | Max | P95 |
+|---|---|---|---|---|---|
+| **Vector Retrieval** | `20.0 ms` | `19.2 ms` | `13.2 ms` | `29.6 ms` | `27.5 ms` |
+| **Hybrid Retrieval** | `18.7 ms` | `17.4 ms` | `13.0 ms` | `31.4 ms` | `27.2 ms` |
+| **LLM Generation** | `1,838.7 ms` | `1,924.1 ms` | `1,083.1 ms` | `2,991.4 ms` | `2,807.0 ms` |
+| **Total End-to-End** | `1,858.7 ms` | `1,948.3 ms` | `1,101.2 ms` | `3,019.7 ms` | `2,827.7 ms` |
+
+---
+
+## 🏗️ System Architecture
 
 ```
-┌─────────────────────────────┐
-│          Frontend           │  Vanilla HTML + CSS + JS
-│  Chat UI · Auth · Citations │  (no framework, fully responsive)
-└──────────────┬──────────────┘
-               │ REST API
-┌──────────────▼──────────────┐
-│       FastAPI Backend        │
-│  /query · /ingest · /login  │
-└──────┬───────────┬───────────┘
-       │           │
-┌──────▼──────┐ ┌──▼────────────┐
-│  ChromaDB   │ │  Gemini API   │
-│ Vector Store│ │ (Flash-Lite / │
-│ + BM25 RRF  │ │  Flash / etc) │
-└─────────────┘ └───────────────┘
+                                  +------------------------+
+                                  |   Raw Documents (PDF,  |
+                                  |   Markdown, Text, Notes|
+                                  +-----------+------------+
+                                              |
+                                     Recursive Chunking
+                                  (500 chars, 50 overlap)
+                                              |
+                               +--------------+---------------+
+                               |                              |
+                               v                              v
+                    +--------------------+         +--------------------+
+                    |  SentenceEmbedder  |         |    BM25 Inverted   |
+                    | (all-MiniLM-L6-v2) |         |     Index (RAM)    |
+                    +----------+---------+         +----------+---------+
+                               |                              |
+                               v                              v
+                    +--------------------+                    |
+                    | ChromaDB Collection|                    |
+                    +----------+---------+                    |
+                               |                              |
+            User Query ------->+------------------------------+
+                               |
+                               v
+                    +--------------------+
+                    | Reciprocal Rank    |  k = 60
+                    | Fusion (RRF)       |
+                    +----------+---------+
+                               | Top-K Chunks
+                               v
+                    +--------------------+
+                    | Prompt Builder &   |
+                    | Citation Mapper    |
+                    +----------+---------+
+                               |
+                               v
+                    +--------------------+
+                    | Model Router &     |  Gemini 2.5/3.5/3.7
+                    | Circuit Breaker    |  with Instant Failover
+                    +----------+---------+
+                               |
+                               v
+                    +--------------------+
+                    | Calibrated Ground- |
+                    | ing Badge & Answer |
+                    +--------------------+
 ```
-
-### Retrieval Pipeline
-1. **Dense Vector Retrieval** — `all-MiniLM-L6-v2` embeddings via ChromaDB L2 index.
-2. **BM25 Sparse Retrieval** — `rank_bm25` with Okapi BM25 over all indexed chunks.
-3. **Reciprocal Rank Fusion (RRF, k=60)** — merges both ranked lists for Hybrid retrieval.
-
-### Confidence Scoring
-Calibrated from ChromaDB L2 distances:
-- 🟢 **High** — `avg_score ≥ 0.67` OR `max_score ≥ 0.74`
-- 🟡 **Medium** — `avg_score ≥ 0.52` OR `max_score ≥ 0.62`
-- 🔴 **Low** — below both thresholds
-
----
-
-## 📈 Quantitative Evaluation Results ($N = 25$ labeled QA pairs)
-
-### Retrieval
-| Metric | Vector-Only | Hybrid (BM25 + Vector) | Gain |
-|---|---|---|---|
-| Precision@3 | 0.7600 | **0.8133** | +7.01% |
-| Recall@3 | 0.9200 | **1.0000** | +8.70% |
-| MRR | 0.8833 | **0.9267** | +4.91% |
-
-### Generation Quality
-| Metric | Value |
-|---|---|
-| Mean Semantic Cosine Similarity | **0.7805** |
-| Mean Token F1 | 0.2270 |
-| High-Confidence Tier Coverage | 36% (9/25) |
-
-### Latency (after circuit-breaker fix)
-| Stage | Mean | P95 | Max |
-|---|---|---|---|
-| Hybrid Retrieval | 18.7 ms | 27.2 ms | 31.4 ms |
-| LLM Generation | 1838.7 ms | 2807.0 ms | 2991.4 ms |
-| End-to-End | 1858.7 ms | 2827.7 ms | 3019.7 ms |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.12+
-- `uv` package manager (recommended) or `pip`
-- A [Gemini API key](https://aistudio.google.com/app/apikey)
+- Python 3.11+ (Python 3.13 recommended)
+- A Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 
-### 1. Clone & Install
+### 1. Clone & Setup Environment
+
 ```bash
 git clone https://github.com/sibirajan777/Athena.git
 cd Athena
 
-# Using uv (recommended)
-uv sync
+# Create and activate virtual environment
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Linux/macOS:
+source .venv/bin/activate
 
-# Or pip
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 2. Configure Environment Variables
+
+Copy the sample environment file:
+
 ```bash
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
 ```
 
-`.env` format:
+Edit `.env` and insert your API credentials:
+
 ```env
-GEMINI_API_KEY=your_api_key_here
-SECRET_KEY=any_random_secret_string
+GEMINI_API_KEY=your_actual_gemini_api_key_here
+JWT_SECRET_KEY=your_secret_jwt_key_here
 ```
 
-### 3. Run
+### 3. Ingest Documents into ChromaDB
+
+Place your PDFs or Markdown notes in the `data/` directory, then run:
+
 ```bash
-# Using uv
-uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000
-
-# Or directly
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python -m backend.services.ingest
 ```
 
-Open `http://127.0.0.1:8000` in your browser.
+### 4. Start Athena Server
+
+```bash
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Open your browser and navigate to: **`http://127.0.0.1:8000`**
 
 ---
 
-## 📁 Project Structure
+## 🧪 Running Tests & Evaluation
+
+### Run System Test Suite
+
+```bash
+python test_full_system.py
+```
+
+### Run Full Quantitative Evaluation Benchmark
+
+```bash
+python evaluate.py
+```
+
+*This generates `eval_report.md`, `eval_results.json`, and `eval_comparison.png`.*
+
+---
+
+## 📂 Project Structure
 
 ```
 Athena/
 ├── backend/
-│   ├── main.py            # FastAPI app & route definitions
-│   ├── services/
-│   │   ├── generate.py    # Gemini generation + circuit breaker
-│   │   ├── retrieve.py    # ChromaDB retrieval
-│   │   └── ingest.py      # Document chunking & embedding
-│   └── auth.py            # JWT authentication
+│   ├── main.py                  # FastAPI application entrypoint & API endpoints
+│   └── services/
+│       ├── db.py                # SQLite database management (Auth, Users, Messages)
+│       ├── ingest.py            # PDF/Markdown parser & ChromaDB vector indexer
+│       ├── retrieve.py          # Semantic vector retrieval service
+│       └── generate.py          # Gemini router, circuit breaker & confidence calculator
+├── data/                        # Document store for indexing
 ├── frontend/
-│   ├── index.html         # Main chat interface
-│   ├── login.html         # Sign-in page
-│   ├── signup.html        # Sign-up page
-│   ├── app.js             # Chat UI, citations, animations
-│   ├── auth.js            # Auth forms & token management
-│   └── style.css          # Full application styles
-├── evaluate.py            # Standalone quantitative benchmark script
-├── eval_dataset.json      # 25 labeled QA pairs for evaluation
-├── eval_results.json      # Latest benchmark results (JSON)
-├── eval_report.md         # Latest benchmark report (Markdown)
-├── eval_comparison.png    # Retrieval comparison chart (300 DPI)
-└── pyproject.toml         # Project & dependency configuration
+│   ├── index.html               # Main application interface
+│   ├── login.html               # User login view
+│   ├── signup.html              # User registration view
+│   ├── style.css                # Dark mode & Antigravity styling system
+│   ├── auth.css                 # Auth forms & glassmorphic styling
+│   ├── app.js                   # Client state, chat streams, citation panels
+│   ├── auth.js                  # Authentication client logic
+│   ├── antigravity.js           # Visual animation effects & floating canvas
+│   └── splash.js                # Dynamic opening splash sequence
+├── eval_dataset.json            # 25 labeled Q&A test pairs with ground truth
+├── evaluate.py                  # Quantitative benchmarking engine
+├── eval_report.md               # Generated academic evaluation report
+├── eval_results.json            # Machine-readable evaluation metrics
+├── eval_comparison.png          # 300 DPI comparative retrieval chart
+├── pyproject.toml               # Project metadata and dependencies
+└── README.md                    # Project documentation
 ```
 
 ---
 
-## 🧪 Running Tests
+## 📜 License
 
-```bash
-# Full system integration tests
-python test_full_system.py
-
-# Auth flow tests
-python test_auth_flow.py
-
-# Knowledge ingestion flow tests
-python test_knowledge_flow.py
-
-# Run the quantitative evaluation benchmark
-python evaluate.py
-```
-
----
-
-## 🔑 Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | ✅ | Your Google Gemini API key |
-| `SECRET_KEY` | ✅ | JWT signing secret (any long random string) |
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-*Built as a Final Year Project demonstrating production-quality RAG system design with quantitative evaluation.*
+This project is licensed under the [MIT License](LICENSE).
