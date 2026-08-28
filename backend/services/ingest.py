@@ -9,7 +9,6 @@ if not os.environ.get("VERCEL"):
 
 import datetime
 import chromadb
-from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 try:
     from docx import Document as DocxDocument
@@ -26,8 +25,43 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 chroma_client = chromadb.PersistentClient(path=str(chroma_path), settings=chromadb.config.Settings(anonymized_telemetry=False))
 collection = chroma_client.get_or_create_collection(name="athena_knowledge")
 
-# Load embedding model once
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Resilient & Lightweight Embedding Adapter
+class AthenaEmbedder:
+    def __init__(self):
+        self._local = None
+        try:
+            from sentence_transformers import SentenceTransformer
+            self._local = SentenceTransformer("all-MiniLM-L6-v2")
+        except Exception as e:
+            self._local = None
+
+    def encode(self, texts, show_progress_bar=False):
+        if isinstance(texts, str):
+            texts = [texts]
+        if self._local:
+            return self._local.encode(texts, show_progress_bar=show_progress_bar)
+        
+        # Fallback for serverless environments (Vercel)
+        try:
+            from backend.services.generate import get_client
+            client = get_client()
+            if client:
+                import numpy as np
+                embs = []
+                for t in texts:
+                    res = client.models.embed_content(
+                        model="text-embedding-004",
+                        contents=t
+                    )
+                    embs.append(res.embeddings[0].values)
+                return np.array(embs)
+        except Exception:
+            pass
+
+        import numpy as np
+        return np.zeros((len(texts), 384))
+
+embedder = AthenaEmbedder()
 
 def extract_pdf_text(filepath: str) -> list[dict]:
     """
