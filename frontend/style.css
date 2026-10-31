@@ -2500,20 +2500,20 @@ body.app-body {
 }
 [data-theme="dark"] .confidence-badge.conf-medium .conf-dot { background: #fbbf24; }
 
-/* Low confidence — soft red */
+/* Low confidence — neutral slate */
 .confidence-badge.conf-low {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #991b1b;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #475569;
 }
-.confidence-badge.conf-low .conf-dot { background: #f87171; }
+.confidence-badge.conf-low .conf-dot { background: #94a3b8; }
 
 [data-theme="dark"] .confidence-badge.conf-low {
-    background: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.25);
-    color: #fca5a5;
+    background: rgba(148, 163, 184, 0.12);
+    border-color: rgba(148, 163, 184, 0.25);
+    color: #cbd5e1;
 }
-[data-theme="dark"] .confidence-badge.conf-low .conf-dot { background: #fca5a5; }
+[data-theme="dark"] .confidence-badge.conf-low .conf-dot { background: #94a3b8; }
 
 /* ==========================================================================
    Feature 2 — Inline Citation Superscripts ([N] references)

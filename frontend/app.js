@@ -1181,8 +1181,8 @@ function appendMessageBubble(text, sender, sources = [], confidence = null, cita
             const levelLabel = {
                 high: "High confidence",
                 medium: "Medium confidence",
-                low: "Low confidence — verify manually"
-            }[confidence.level] || "Unknown";
+                low: "Low confidence"
+            }[confidence.level] || "Grounded";
             const scoreText = confidence.score != null ? ` · ${Math.round(confidence.score * 100)}%` : "";
             const srcText = confidence.num_sources > 0
                 ? ` · ${confidence.num_sources} source${confidence.num_sources !== 1 ? "s" : ""}`
@@ -1557,8 +1557,13 @@ function formatMarkdown(text) {
     formatted = formatted.replace(/^### (.*$)/gim, '<h3 style="color:var(--text-primary);font-size:15px;margin:12px 0 4px;font-weight:600;">$1</h3>');
     formatted = formatted.replace(/^## (.*$)/gim, '<h2 style="color:var(--text-primary);font-size:16px;margin:14px 0 6px;font-weight:600;">$1</h2>');
 
+    // Clean up trailing unmatched bold markers
+    const boldMatches = (formatted.match(/\*\*/g) || []).length;
+    if (boldMatches % 2 !== 0) {
+        formatted += "**";
+    }
     // Bold: **text**
-    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    formatted = formatted.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
 
     // Italic: *text*
     formatted = formatted.replace(/\*([^*]+)\*/g, "<em>$1</em>");

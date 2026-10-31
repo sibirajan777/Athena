@@ -60,35 +60,52 @@ def mark_model_cooldown(model_name: str, duration_sec: float = 60.0):
 
 def compute_confidence(chunks: list[dict]) -> dict:
     """
-    Derive a calibrated confidence tier from ChromaDB L2 distances.
+    Derive a calibrated grounding confidence tier from ChromaDB retrieval distances.
 
-    ChromaDB returns L2 distances; we convert to a pseudo-cosine score:
-        score_i = max(0, 1 - distance_i / 2)   (range 0..1, higher = better)
-
-    Calibrated Tiers:
-        high   — avg score >= 0.67 OR top chunk max score >= 0.74
-        medium — avg score >= 0.52 OR top chunk max score >= 0.62
-        low    — weak grounding / low relevance
+    Calibrated conversion:
+        d <= 0.8  -> 85% - 98% (High confidence, strong semantic match)
+        d <= 1.4  -> 70% - 85% (High / solid grounding)
+        d <= 1.65 -> 55% - 70% (Medium confidence, good keyword/context match)
+        d <= 1.85 -> 40% - 55% (Partial contextual match)
+        d > 1.85  -> < 40% (Weak relevance)
     """
     if not chunks:
         return {"level": "low", "score": 0.0, "max_score": 0.0, "num_sources": 0}
 
-    scores = [max(0.0, 1.0 - c.get("distance", 2.0) / 2.0) for c in chunks]
+    scores = []
+    for c in chunks:
+        d = float(c.get("distance", 2.0))
+        if d <= 0.8:
+            s = 0.85 + (0.8 - d) / 0.8 * 0.13
+        elif d <= 1.4:
+            s = 0.70 + (1.4 - d) / 0.6 * 0.15
+        elif d <= 1.65:
+            s = 0.55 + (1.65 - d) / 0.25 * 0.15
+        elif d <= 1.85:
+            s = 0.40 + (1.85 - d) / 0.2 * 0.15
+        else:
+            s = max(0.1, 0.40 - (d - 1.85))
+        scores.append(s)
+
     avg_score = sum(scores) / len(scores)
     max_score = max(scores)
-    distinct_sources = len(set(c.get("source", "") for c in chunks))
+    distinct_sources = len(set(c.get("source", "") for c in chunks if c.get("source")))
 
-    if avg_score >= 0.67 or max_score >= 0.74:
+    # Multi-source cross-reference reinforcement
+    boost = 0.04 if distinct_sources >= 2 else 0.0
+    final_score = min(0.98, max_score * 0.65 + avg_score * 0.35 + boost)
+
+    if final_score >= 0.72:
         level = "high"
-    elif avg_score >= 0.52 or max_score >= 0.62:
+    elif final_score >= 0.50:
         level = "medium"
     else:
         level = "low"
 
     return {
         "level": level,
-        "score": round(avg_score, 3),
-        "max_score": round(max_score, 3),
+        "score": round(final_score, 2),
+        "max_score": round(max_score, 2),
         "num_sources": distinct_sources,
     }
 

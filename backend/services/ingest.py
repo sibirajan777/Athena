@@ -363,37 +363,53 @@ def get_detailed_documents_list() -> dict:
 get_indexed_documents = get_detailed_documents_list
 
 def get_document_preview(filename: str, max_chunks: int = 6) -> dict:
-    """Returns sample indexed chunks and text snippets for a given document."""
+    """Returns sample indexed chunks and text snippets for a given document directly from ChromaDB."""
     try:
-        file_path = DATA_DIR / filename
-        if not file_path.exists():
-            return {"error": "Document not found on disk"}
+        import urllib.parse
+        clean_name = urllib.parse.unquote(filename).strip()
 
         # Query ChromaDB for chunks belonging to this document
         results = collection.get(
-            where={"source": filename},
+            where={"source": clean_name},
             limit=max_chunks,
             include=["documents", "metadatas"]
         )
 
+        # Fallback to raw filename if unquoted produced no match
+        if not results or not results.get("documents"):
+            results = collection.get(
+                where={"source": filename},
+                limit=max_chunks,
+                include=["documents", "metadatas"]
+            )
+
         chunks_preview = []
         if results and "documents" in results and results["documents"]:
             for i, doc_text in enumerate(results["documents"]):
+                chunk_id = results["ids"][i] if "ids" in results and i < len(results["ids"]) else f"chunk_{i}"
                 chunks_preview.append({
-                    "chunk_id": results["ids"][i] if "ids" in results else f"chunk_{i}",
+                    "chunk_id": chunk_id,
                     "text": doc_text[:400] + ("..." if len(doc_text) > 400 else "")
                 })
 
-        stat = file_path.stat()
+        file_path = DATA_DIR / clean_name
+        size_bytes = file_path.stat().st_size if file_path.exists() else 0
+
         return {
-            "filename": filename,
-            "size_bytes": stat.st_size,
-            "total_chunks_found": len(results.get("documents", [])),
+            "filename": clean_name,
+            "size_bytes": size_bytes,
+            "total_chunks_found": len(chunks_preview),
             "chunks_preview": chunks_preview
         }
     except Exception as e:
         print(f"Error previewing document {filename}: {e}")
-        return {"error": str(e)}
+        return {
+            "filename": filename,
+            "size_bytes": 0,
+            "total_chunks_found": 0,
+            "chunks_preview": [],
+            "error": str(e)
+        }
 
 def delete_document(filename: str) -> bool:
     """Deletes a document from the data directory and deletes its chunks from ChromaDB."""

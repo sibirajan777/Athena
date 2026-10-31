@@ -280,6 +280,14 @@ def knowledge_stats(user_id: int = Depends(get_current_user_id)):
 def knowledge_documents(user_id: int = Depends(get_current_user_id)):
     return get_indexed_documents()
 
+@app.get("/knowledge/documents/{filename}/preview")
+async def document_preview_endpoint(filename: str, user_id: int = Depends(get_current_user_id)):
+    try:
+        preview_data = await run_in_threadpool(get_document_preview, filename)
+        return preview_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/knowledge/documents/{filename}")
 async def delete_knowledge_document(filename: str, user_id: int = Depends(get_current_user_id)):
     try:
